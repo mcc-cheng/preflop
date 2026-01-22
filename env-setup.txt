@@ -1,0 +1,12 @@
+Copy this content and save as .env in the project root:
+
+DATABASE_URL="postgresql://username:password@host:port/database"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="csZioK3VyCCCk5K0hVSGyZx49snpfrK3IDul+U03fXc="
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+Replace the DATABASE_URL with your actual PostgreSQL connection string.
+
+Get a free database at:
+- Neon: https://console.neon.tech (Recommended)
+- Supabase: https://supabase.com/dashboard

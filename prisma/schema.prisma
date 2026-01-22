@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String?
+  name         String
+  createdAt    DateTime     @default(now())
+  
+  hostedRooms  Room[]       @relation("HostedRooms")
+  memberships  RoomMember[]
+  events       Event[]
+}
+
+model Room {
+  id        String       @id @default(cuid())
+  code      String       @unique
+  hostId    String
+  host      User         @relation("HostedRooms", fields: [hostId], references: [id])
+  createdAt DateTime     @default(now())
+  endedAt   DateTime?
+  
+  // Settings stored as JSON: { name, defaultBuyIn, blinds, currency, maxPlayers }
+  settings  Json
+  
+  members   RoomMember[]
+  events    Event[]
+  settlements Settlement[]
+  
+  @@index([code])
+  @@index([hostId])
+}
+
+enum RoomRole {
+  HOST
+  PLAYER
+}
+
+model RoomMember {
+  roomId    String
+  room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      RoomRole
+  joinedAt  DateTime  @default(now())
+  
+  @@id([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+}
+
+enum EventType {
+  BUY_IN
+  REBUY
+  CASH_OUT
+  NOTE
+}
+
+model Event {
+  id        String     @id @default(cuid())
+  roomId    String
+  room      Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      EventType
+  
+  // Amount in cents (integer)
+  amount    Int
+  
+  createdAt DateTime   @default(now())
+  
+  // Optional metadata for notes, corrections, etc.
+  metadata  Json?
+  
+  @@index([roomId, createdAt])
+  @@index([userId])
+}
+
+model Settlement {
+  id         String   @id @default(cuid())
+  roomId     String
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  computedAt DateTime @default(now())
+  
+  // Array of { fromUserId, toUserId, amountCents }
+  edges      Json
+  
+  @@index([roomId])
+}
