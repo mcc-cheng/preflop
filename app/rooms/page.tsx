@@ -38,6 +38,18 @@ export default async function RoomsPage() {
           </div>
           <div className="flex gap-4">
             <Link
+              href="/friends"
+              className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition"
+            >
+              👥 Friends
+            </Link>
+            <Link
+              href="/settings"
+              className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition"
+            >
+              ⚙️ Settings
+            </Link>
+            <Link
               href="/rooms/new"
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
             >

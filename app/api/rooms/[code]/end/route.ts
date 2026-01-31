@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { saveSettlement } from '@/lib/settlement'
+import { updatePlayerStatsForRoom } from '@/lib/stats'
 
 export async function POST(
   request: Request,
@@ -34,6 +35,9 @@ export async function POST(
     })
 
     const settlement = await saveSettlement(room.id)
+    
+    // Update player statistics
+    await updatePlayerStatsForRoom(room.id)
 
     return NextResponse.json({ settlement })
   } catch (error: any) {

@@ -8,15 +8,31 @@ datasource db {
 }
 
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  passwordHash String?
-  name         String
-  createdAt    DateTime     @default(now())
+  id            String       @id @default(cuid())
+  email         String       @unique
+  username      String       @unique
+  phone         String?      @unique
+  passwordHash  String?
+  name          String
+  profilePicture String?     @default("/default-avatar.png")
+  createdAt     DateTime     @default(now())
   
-  hostedRooms  Room[]       @relation("HostedRooms")
-  memberships  RoomMember[]
-  events       Event[]
+  hostedRooms   Room[]       @relation("HostedRooms")
+  memberships   RoomMember[]
+  events        Event[]
+  paymentMethods PaymentMethod[]
+  
+  // Friends system
+  friendshipsInitiated Friendship[] @relation("UserFriendships")
+  friendshipsReceived  Friendship[] @relation("FriendUser")
+  sentFriendRequests   FriendRequest[] @relation("RequestSender")
+  receivedFriendRequests FriendRequest[] @relation("RequestReceiver")
+  
+  // Statistics
+  stats         UserStats?
+  
+  @@index([username])
+  @@index([email])
 }
 
 model Room {
@@ -93,4 +109,84 @@ model Settlement {
   edges      Json
   
   @@index([roomId])
+}
+
+enum PaymentMethodType {
+  VENMO
+  APPLE_PAY
+  BANK_TRANSFER
+  DEBIT_CARD
+  PAYPAL
+  ZELLE
+  CASH_APP
+}
+
+model PaymentMethod {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      PaymentMethodType
+  
+  // For Venmo, PayPal, etc: username/handle
+  // For bank: last 4 digits
+  // For cards: last 4 digits
+  identifier String
+  
+  // Display name (e.g., "My Venmo", "Chase Checking")
+  nickname   String?
+  
+  isDefault  Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+  
+  @@index([userId])
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model FriendRequest {
+  id         String              @id @default(cuid())
+  senderId   String
+  sender     User                @relation("RequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User                @relation("RequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     FriendRequestStatus @default(PENDING)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+  @@index([senderId])
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friendId  String
+  friend    User     @relation("FriendUser", fields: [friendId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+model UserStats {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  gamesPlayed     Int      @default(0)
+  hoursPlayed     Float    @default(0) // Stored as decimal hours
+  totalWinnings   Int      @default(0) // In cents (can be negative)
+  totalBuyIns     Int      @default(0) // In cents
+  totalCashOuts   Int      @default(0) // In cents
+  
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId])
 }
