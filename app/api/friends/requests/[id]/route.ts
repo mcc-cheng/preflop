@@ -1,18 +1,25 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
+import { z } from 'zod'
+import { handleApiError } from '@/lib/api'
+
+const RespondSchema = z.object({
+  action: z.enum(['accept', 'decline']),
+})
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
     const body = await request.json()
-    const { action } = body // 'accept' or 'decline'
+    const { action } = RespondSchema.parse(body)
 
     const friendRequest = await prisma.friendRequest.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!friendRequest || friendRequest.receiverId !== user.id) {
@@ -39,7 +46,7 @@ export async function POST(
           }
         }),
         prisma.friendRequest.update({
-          where: { id: params.id },
+          where: { id },
           data: { status: 'ACCEPTED' }
         })
       ])
@@ -47,15 +54,18 @@ export async function POST(
       return NextResponse.json({ success: true, action: 'accepted' })
     } else if (action === 'decline') {
       await prisma.friendRequest.update({
-        where: { id: params.id },
+        where: { id },
         data: { status: 'DECLINED' }
       })
 
       return NextResponse.json({ success: true, action: 'declined' })
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error?.code === 'P2002') {
+      return NextResponse.json({ error: 'Already friends' }, { status: 400 })
+    }
+
+    return handleApiError(error)
   }
 }

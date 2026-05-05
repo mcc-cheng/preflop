@@ -2,21 +2,25 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { getPlayerNets, computeSettlement } from '@/lib/settlement'
+import { handleApiError, roomCodeSchema, roomUserSelect } from '@/lib/api'
 
 export async function GET(
   request: Request,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
     const user = await requireAuth()
-    const code = params.code.toUpperCase()
+    const { code: rawCode } = await params
+    const code = roomCodeSchema.parse(rawCode)
 
     const room = await prisma.room.findUnique({
       where: { code },
       include: {
         members: {
           include: {
-            user: true
+            user: {
+              select: roomUserSelect,
+            }
           }
         }
       }
@@ -50,9 +54,10 @@ export async function GET(
 
     return NextResponse.json({
       nets: enrichedNets,
-      edges: enrichedEdges
+      edges: enrichedEdges,
+      settlements: enrichedEdges,
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return handleApiError(error)
   }
 }

@@ -1,16 +1,26 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
+import { z } from 'zod'
+import { handleApiError, paymentMethodSelect } from '@/lib/api'
+
+const UpdatePaymentMethodSchema = z.object({
+  type: z.enum(['VENMO', 'APPLE_PAY', 'BANK_TRANSFER', 'DEBIT_CARD', 'PAYPAL', 'ZELLE', 'CASH_APP']).optional(),
+  identifier: z.string().trim().min(1).max(120).optional(),
+  nickname: z.string().trim().max(80).optional().or(z.literal('')),
+  isDefault: z.boolean().optional(),
+}).strict()
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
 
     const paymentMethod = await prisma.paymentMethod.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!paymentMethod || paymentMethod.userId !== user.id) {
@@ -18,25 +28,27 @@ export async function DELETE(
     }
 
     await prisma.paymentMethod.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return handleApiError(error)
   }
 }
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAuth()
+    const { id } = await params
     const body = await request.json()
+    const data = UpdatePaymentMethodSchema.parse(body)
 
     const paymentMethod = await prisma.paymentMethod.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!paymentMethod || paymentMethod.userId !== user.id) {
@@ -44,20 +56,26 @@ export async function PATCH(
     }
 
     // If setting as default, unset others
-    if (body.isDefault) {
-      await prisma.paymentMethod.updateMany({
-        where: { userId: user.id, isDefault: true },
-        data: { isDefault: false }
-      })
-    }
+    const updated = await prisma.$transaction(async tx => {
+      if (data.isDefault) {
+        await tx.paymentMethod.updateMany({
+          where: { userId: user.id, isDefault: true },
+          data: { isDefault: false }
+        })
+      }
 
-    const updated = await prisma.paymentMethod.update({
-      where: { id: params.id },
-      data: body
+      return tx.paymentMethod.update({
+        where: { id },
+        data: {
+          ...data,
+          nickname: data.nickname === '' ? null : data.nickname,
+        },
+        select: paymentMethodSelect,
+      })
     })
 
     return NextResponse.json(updated)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return handleApiError(error)
   }
 }

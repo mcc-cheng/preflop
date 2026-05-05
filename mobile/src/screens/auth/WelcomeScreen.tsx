@@ -10,7 +10,7 @@ export default function WelcomeScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.emoji}>💰</Text>
+        <Text style={styles.emoji}>🃏</Text>
         <Text style={styles.title}>Preflop</Text>
         <Text style={styles.subtitle}>
           Track buy-ins, cashouts, and settle up after poker night

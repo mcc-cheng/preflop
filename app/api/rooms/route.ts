@@ -3,13 +3,14 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { generateRoomCode } from '@/lib/utils'
 import { z } from 'zod'
+import { handleApiError, moneyAmountSchema, roomUserSelect } from '@/lib/api'
 
 const CreateRoomSchema = z.object({
-  name: z.string().min(1),
-  defaultBuyIn: z.number().positive(),
-  blinds: z.string().optional(),
-  currency: z.string().default('USD'),
-  maxPlayers: z.number().optional(),
+  name: z.string().trim().min(1).max(80),
+  defaultBuyIn: moneyAmountSchema,
+  blinds: z.string().trim().max(24).optional().or(z.literal('')),
+  currency: z.literal('USD').default('USD'),
+  maxPlayers: z.number().int().min(2).max(20).optional(),
 })
 
 export async function POST(request: Request) {
@@ -18,45 +19,56 @@ export async function POST(request: Request) {
     const body = await request.json()
     const data = CreateRoomSchema.parse(body)
 
-    let code = generateRoomCode()
-    // Ensure uniqueness
-    let existing = await prisma.room.findUnique({ where: { code } })
-    while (existing) {
-      code = generateRoomCode()
-      existing = await prisma.room.findUnique({ where: { code } })
-    }
+    let room
 
-    const room = await prisma.room.create({
-      data: {
-        code,
-        hostId: user.id,
-        settings: {
-          name: data.name,
-          defaultBuyIn: data.defaultBuyIn,
-          blinds: data.blinds,
-          currency: data.currency,
-          maxPlayers: data.maxPlayers,
-        },
-        members: {
-          create: {
-            userId: user.id,
-            role: 'HOST'
-          }
-        }
-      },
-      include: {
-        host: true,
-        members: {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        room = await prisma.room.create({
+          data: {
+            code: generateRoomCode(),
+            hostId: user.id,
+            settings: {
+              name: data.name,
+              defaultBuyIn: data.defaultBuyIn,
+              blinds: data.blinds || undefined,
+              currency: data.currency,
+              maxPlayers: data.maxPlayers,
+            },
+            members: {
+              create: {
+                userId: user.id,
+                role: 'HOST'
+              }
+            }
+          },
           include: {
-            user: true
+            host: {
+              select: roomUserSelect,
+            },
+            members: {
+              include: {
+                user: {
+                  select: roomUserSelect,
+                }
+              }
+            }
           }
+        })
+        break
+      } catch (error: any) {
+        if (error?.code !== 'P2002' || attempt === 4) {
+          throw error
         }
       }
-    })
+    }
+
+    if (!room) {
+      return NextResponse.json({ error: 'Failed to create room' }, { status: 500 })
+    }
 
     return NextResponse.json(room)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return handleApiError(error)
   }
 }
 
@@ -73,10 +85,14 @@ export async function GET(request: Request) {
         }
       },
       include: {
-        host: true,
+        host: {
+          select: roomUserSelect,
+        },
         members: {
           include: {
-            user: true
+            user: {
+              select: roomUserSelect,
+            }
           }
         },
         _count: {
@@ -90,8 +106,8 @@ export async function GET(request: Request) {
       }
     })
 
-    return NextResponse.json(rooms)
+    return NextResponse.json({ rooms })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return handleApiError(error)
   }
 }

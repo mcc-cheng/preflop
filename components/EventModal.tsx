@@ -39,7 +39,11 @@ export default function EventModal({ roomCode, eventType, defaultAmount, onClose
   }
 
   const title = eventType === 'BUY_IN' ? 'Buy In' : eventType === 'REBUY' ? 'Rebuy' : 'Cash Out'
-  const color = eventType === 'CASH_OUT' ? 'green' : eventType === 'REBUY' ? 'yellow' : 'blue'
+  const submitClassName = {
+    BUY_IN: 'flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg',
+    REBUY: 'flex-1 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-800 text-white rounded-lg',
+    CASH_OUT: 'flex-1 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg',
+  }[eventType]
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -78,7 +82,7 @@ export default function EventModal({ roomCode, eventType, defaultAmount, onClose
             <button
               type="submit"
               disabled={loading}
-              className={`flex-1 py-2 bg-${color}-600 hover:bg-${color}-700 disabled:bg-${color}-800 text-white rounded-lg`}
+              className={submitClassName}
             >
               {loading ? 'Submitting...' : 'Submit'}
             </button>

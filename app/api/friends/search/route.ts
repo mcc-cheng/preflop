@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
+import { handleApiError, statsSelect, usernameSchema } from '@/lib/api'
 
 export async function GET(request: Request) {
   try {
     const user = await requireAuth()
     const { searchParams } = new URL(request.url)
-    const username = searchParams.get('username')
+    const rawUsername = searchParams.get('username')
 
-    if (!username) {
+    if (!rawUsername) {
       return NextResponse.json({ error: 'Username required' }, { status: 400 })
     }
+    const username = usernameSchema.parse(rawUsername)
 
     const foundUser = await prisma.user.findUnique({
       where: { username },
@@ -19,7 +21,9 @@ export async function GET(request: Request) {
         username: true,
         name: true,
         profilePicture: true,
-        stats: true
+        stats: {
+          select: statsSelect,
+        }
       }
     })
 
@@ -52,11 +56,12 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       user: foundUser,
+      users: [foundUser],
       isFriend: !!friendship,
       hasPendingRequest: !!friendRequest,
       requestSentByMe: friendRequest?.senderId === user.id
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return handleApiError(error)
   }
 }

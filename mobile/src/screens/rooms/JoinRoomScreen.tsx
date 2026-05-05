@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { Camera, CameraView } from 'expo-camera';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config/api';
 
@@ -16,6 +17,27 @@ export default function JoinRoomScreen({ navigation }: any) {
   const { token } = useAuth();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [mode, setMode] = useState<'enter' | 'scan'>('enter');
+
+  useEffect(() => {
+    const getCameraPermissions = async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === 'granted');
+    };
+    getCameraPermissions();
+  }, []);
+
+  const handleBarCodeScanned = ({ type, data }: any) => {
+    const scannedCode = data.trim().toUpperCase();
+    if (scannedCode.length === 6) {
+      setCode(scannedCode);
+      setMode('enter');
+      Alert.alert('QR Code Scanned', `Code: ${scannedCode}`);
+    } else {
+      Alert.alert('Invalid QR Code', 'The scanned code is not a valid 6-character room code.');
+    }
+  };
 
   const handleJoin = async () => {
     const roomCode = code.trim().toUpperCase();
@@ -72,52 +94,96 @@ export default function JoinRoomScreen({ navigation }: any) {
       <View style={styles.header}>
         <Text style={styles.title}>Join Session</Text>
         <Text style={styles.subtitle}>
-          Enter the 6-character code to join a poker session
+          {mode === 'enter' ? 'Enter the 6-character code to join a poker session' : 'Scan the QR code to join a poker session'}
         </Text>
       </View>
 
-      <View style={styles.form}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Session Code</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="ABC123"
-            value={code}
-            onChangeText={(text) => setCode(text.toUpperCase())}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            maxLength={6}
-          />
-          <Text style={styles.hint}>
-            Ask the session host for the 6-character code
+      <View style={styles.modeSelector}>
+        <TouchableOpacity
+          style={[styles.modeButton, mode === 'enter' && styles.modeButtonActive]}
+          onPress={() => setMode('enter')}
+        >
+          <Text style={[styles.modeButtonText, mode === 'enter' && styles.modeButtonTextActive]}>
+            Enter Code
           </Text>
-        </View>
-
-        <TouchableOpacity
-          style={[styles.joinButton, loading && styles.buttonDisabled]}
-          onPress={handleJoin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Join Session</Text>
-          )}
         </TouchableOpacity>
-
         <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => navigation.goBack()}
-          disabled={loading}
+          style={[styles.modeButton, mode === 'scan' && styles.modeButtonActive]}
+          onPress={() => setMode('scan')}
         >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
+          <Text style={[styles.modeButtonText, mode === 'scan' && styles.modeButtonTextActive]}>
+            Scan QR
+          </Text>
         </TouchableOpacity>
       </View>
+
+      {mode === 'enter' ? (
+        <View style={styles.form}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Session Code</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="ABC123"
+              value={code}
+              onChangeText={(text) => setCode(text.toUpperCase())}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={6}
+            />
+            <Text style={styles.hint}>
+              Ask the session host for the 6-character code
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.joinButton, loading && styles.buttonDisabled]}
+            onPress={handleJoin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Join Session</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => navigation.goBack()}
+            disabled={loading}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.scanContainer}>
+          {hasPermission === null ? (
+            <Text style={styles.permissionText}>Requesting camera permission...</Text>
+          ) : hasPermission === false ? (
+            <Text style={styles.permissionText}>Camera permission denied. Please enable in settings.</Text>
+          ) : (
+            <CameraView
+              style={styles.camera}
+              facing="back"
+              onBarcodeScanned={handleBarCodeScanned}
+              barcodeScannerSettings={{
+                barcodeTypes: ['qr'],
+              }}
+            />
+          )}
+          <TouchableOpacity
+            style={styles.cancelScanButton}
+            onPress={() => setMode('enter')}
+          >
+            <Text style={styles.cancelScanButtonText}>Back to Code</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={styles.infoBox}>
         <Text style={styles.infoTitle}>💡 Tip</Text>
         <Text style={styles.infoText}>
-          The session host can find the code at the top of their session screen. Make sure you're joining the correct session!
+          The session host can show the QR code from their session screen. Make sure you're joining the correct session!
         </Text>
       </View>
     </ScrollView>
@@ -144,6 +210,35 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#6b7280',
+  },
+  modeSelector: {
+    flexDirection: 'row',
+    marginBottom: 24,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 4,
+  },
+  modeButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  modeButtonActive: {
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  modeButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  modeButtonTextActive: {
+    color: '#111827',
   },
   form: {
     marginBottom: 24,
@@ -177,6 +272,18 @@ const styles = StyleSheet.create({
     marginTop: 6,
     textAlign: 'center',
   },
+  scanButton: {
+    backgroundColor: '#3b82f6',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  scanButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   joinButton: {
     backgroundColor: '#10b981',
     paddingVertical: 16,
@@ -203,6 +310,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  scanContainer: {
+    height: 400,
+    backgroundColor: '#000',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 24,
+  },
+  permissionText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 200,
+  },
   infoBox: {
     backgroundColor: '#fef3c7',
     borderRadius: 12,
@@ -220,5 +340,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#92400e',
     lineHeight: 22,
+  },
+  camera: {
+    flex: 1,
+  },
+  cancelScanButton: {
+    backgroundColor: '#ef4444',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    position: 'absolute',
+    bottom: 20,
+    left: '50%',
+    transform: [{ translateX: -50 }],
+  },
+  cancelScanButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

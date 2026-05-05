@@ -62,7 +62,7 @@ export default function SettlementScreen({ route, navigation }: any) {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>💰 Settlement</Text>
+        <Text style={styles.title}>🃏 Settlement</Text>
         <Text style={styles.subtitle}>{roomName}</Text>
       </View>
 
