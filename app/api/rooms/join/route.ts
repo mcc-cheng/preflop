@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { z } from 'zod'
 import { handleApiError, roomCodeSchema } from '@/lib/api'
+import { requirePaymentSetup } from '@/lib/payment-eligibility'
 
 const JoinRoomSchema = z.object({
   code: roomCodeSchema,
@@ -11,6 +12,7 @@ const JoinRoomSchema = z.object({
 export async function POST(request: Request) {
   try {
     const user = await requireAuth()
+    await requirePaymentSetup(user.id)
     const body = await request.json()
     const { code } = JoinRoomSchema.parse(body)
 
@@ -57,6 +59,13 @@ export async function POST(request: Request) {
       },
     })
   } catch (error: any) {
+    if (error?.message === 'PAYMENT_SETUP_REQUIRED') {
+      return NextResponse.json(
+        { error: 'Link at least two payment types before joining a room' },
+        { status: 403 }
+      )
+    }
+
     return handleApiError(error)
   }
 }
