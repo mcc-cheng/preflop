@@ -3,22 +3,29 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { usdToCents } from '@/lib/utils'
 import { z } from 'zod'
+import { handleApiError, moneyAmountSchema, roomCodeSchema, roomUserSelect } from '@/lib/api'
+import { Prisma } from '@prisma/client'
 
 const CreateEventSchema = z.object({
-  type: z.enum(['BUY_IN', 'REBUY', 'CASH_OUT', 'NOTE']),
-  amount: z.number().positive(), // in USD
-  metadata: z.any().optional(),
+  type: z.enum(['BUY_IN', 'REBUY', 'CASH_OUT']),
+  amount: moneyAmountSchema.optional(), // in USD
+  amountCents: z.number().int().positive().max(100_000_000).optional(),
+  metadata: z.record(z.unknown()).optional(),
+}).refine(data => data.amount !== undefined || data.amountCents !== undefined, {
+  message: 'Amount is required',
 })
 
 export async function POST(
   request: Request,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
     const user = await requireAuth()
-    const code = params.code.toUpperCase()
+    const { code: rawCode } = await params
+    const code = roomCodeSchema.parse(rawCode)
     const body = await request.json()
     const data = CreateEventSchema.parse(body)
+    const amount = data.amountCents ?? usdToCents(data.amount as number)
 
     const room = await prisma.room.findUnique({
       where: { code },
@@ -45,16 +52,21 @@ export async function POST(
         roomId: room.id,
         userId: user.id,
         type: data.type,
-        amount: usdToCents(data.amount),
-        metadata: data.metadata
+        amount,
+        metadata: data.metadata as Prisma.InputJsonValue | undefined
       },
       include: {
-        user: true
+        user: {
+          select: roomUserSelect,
+        }
       }
     })
 
-    return NextResponse.json(event)
+    return NextResponse.json({
+      ...event,
+      amountCents: event.amount,
+    })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return handleApiError(error)
   }
 }

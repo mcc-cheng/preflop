@@ -2,37 +2,20 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
+import { handleApiError, nameSchema, phoneSchema, usernameSchema } from '@/lib/api'
 
 const RegisterSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  name: z.string().min(1),
-  username: z.string().min(3).max(20),
-  phone: z.string().optional(),
+  email: z.string().trim().toLowerCase().email(),
+  password: z.string().min(8).max(128),
+  name: nameSchema,
+  username: usernameSchema,
+  phone: phoneSchema,
 })
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { email, password, name, username, phone } = RegisterSchema.parse(body)
-
-    // Check if email exists
-    const existingEmail = await prisma.user.findUnique({
-      where: { email }
-    })
-
-    if (existingEmail) {
-      return NextResponse.json({ error: 'Email already exists' }, { status: 400 })
-    }
-
-    // Check if username exists
-    const existingUsername = await prisma.user.findUnique({
-      where: { username }
-    })
-
-    if (existingUsername) {
-      return NextResponse.json({ error: 'Username already taken' }, { status: 400 })
-    }
 
     const passwordHash = await bcrypt.hash(password, 10)
 
@@ -42,7 +25,7 @@ export async function POST(request: Request) {
         passwordHash,
         name,
         username,
-        phone,
+        phone: phone || null,
         stats: {
           create: {}
         }
@@ -56,6 +39,11 @@ export async function POST(request: Request) {
       username: user.username
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error?.code === 'P2002') {
+      const target = Array.isArray(error.meta?.target) ? error.meta.target.join(', ') : 'field'
+      return NextResponse.json({ error: `${target} already exists` }, { status: 400 })
+    }
+
+    return handleApiError(error)
   }
 }

@@ -22,7 +22,7 @@ export default function FriendsPage() {
     const res = await fetch('/api/friends')
     if (res.ok) {
       const data = await res.json()
-      setFriends(data)
+      setFriends(data.friends || data)
     }
   }
 
@@ -30,7 +30,7 @@ export default function FriendsPage() {
     const res = await fetch('/api/friends/requests')
     if (res.ok) {
       const data = await res.json()
-      setPendingRequests(data)
+      setPendingRequests(data.requests || data)
     }
   }
 

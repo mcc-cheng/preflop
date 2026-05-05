@@ -1,8 +1,10 @@
+import { randomInt } from 'crypto'
+
 export function generateRoomCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Removed confusing chars
   let code = ''
   for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)]
+    code += chars[randomInt(chars.length)]
   }
   return code
 }

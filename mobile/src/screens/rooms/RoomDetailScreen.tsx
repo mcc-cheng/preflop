@@ -260,7 +260,7 @@ export default function RoomDetailScreen({ route, navigation }: any) {
               <View key={event.id} style={styles.eventCard}>
                 <View>
                   <Text style={styles.eventType}>
-                    {event.type === 'BUY_IN' ? '💵 Buy-in' : '💰 Cash-out'}
+                    {event.type === 'BUY_IN' ? '💵 Buy-in' : '🃏 Cash-out'}
                   </Text>
                   <Text style={styles.eventUser}>{event.user.name}</Text>
                   <Text style={styles.eventTime}>

@@ -14,9 +14,16 @@ export default function SettlementView({ roomCode, onClose }: Props) {
 
   useEffect(() => {
     fetch(`/api/rooms/${roomCode}/settlement`)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch settlement')
+        return res.json()
+      })
       .then(data => {
         setData(data)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Error loading settlement:', err)
         setLoading(false)
       })
   }, [roomCode])

@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { z } from 'zod'
+import { handleApiError, roomCodeSchema } from '@/lib/api'
 
 const JoinRoomSchema = z.object({
-  code: z.string().length(6),
+  code: roomCodeSchema,
 })
 
 export async function POST(request: Request) {
@@ -31,17 +32,31 @@ export async function POST(request: Request) {
     // Check if already a member
     const existingMember = room.members.find(m => m.userId === user.id)
     if (!existingMember) {
-      await prisma.roomMember.create({
-        data: {
+      await prisma.roomMember.upsert({
+        where: {
+          roomId_userId: {
+            roomId: room.id,
+            userId: user.id,
+          },
+        },
+        update: {},
+        create: {
           roomId: room.id,
           userId: user.id,
-          role: 'PLAYER'
-        }
+          role: 'PLAYER',
+        },
       })
     }
 
-    return NextResponse.json({ roomCode: room.code })
+    return NextResponse.json({
+      roomCode: room.code,
+      room: {
+        id: room.id,
+        code: room.code,
+        settings: room.settings,
+      },
+    })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return handleApiError(error)
   }
 }

@@ -2,12 +2,21 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { z } from 'zod'
+import {
+  handleApiError,
+  nameSchema,
+  paymentMethodSelect,
+  phoneSchema,
+  privateUserSelect,
+  statsSelect,
+  usernameSchema,
+} from '@/lib/api'
 
 const UpdateProfileSchema = z.object({
-  name: z.string().min(1).optional(),
-  username: z.string().min(3).max(20).optional(),
-  phone: z.string().optional(),
-  profilePicture: z.string().optional(),
+  name: nameSchema.optional(),
+  username: usernameSchema.optional(),
+  phone: phoneSchema,
+  profilePicture: z.string().trim().max(2048).optional(),
 })
 
 export async function GET(request: Request) {
@@ -16,9 +25,18 @@ export async function GET(request: Request) {
     
     const profile = await prisma.user.findUnique({
       where: { id: user.id },
-      include: {
-        paymentMethods: true,
-        stats: true,
+      select: {
+        ...privateUserSelect,
+        paymentMethods: {
+          select: paymentMethodSelect,
+          orderBy: [
+            { isDefault: 'desc' },
+            { createdAt: 'desc' },
+          ],
+        },
+        stats: {
+          select: statsSelect,
+        },
         _count: {
           select: {
             friendshipsInitiated: true
@@ -55,11 +73,19 @@ export async function PATCH(request: Request) {
 
     const updated = await prisma.user.update({
       where: { id: user.id },
-      data
+      data: {
+        ...data,
+        phone: data.phone === '' ? null : data.phone,
+      },
+      select: privateUserSelect,
     })
 
     return NextResponse.json(updated)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error?.code === 'P2002') {
+      return NextResponse.json({ error: 'Username or phone already taken' }, { status: 400 })
+    }
+
+    return handleApiError(error)
   }
 }

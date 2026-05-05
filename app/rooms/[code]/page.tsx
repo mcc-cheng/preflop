@@ -7,6 +7,9 @@ import { centsToUSD, formatTimestamp } from '@/lib/utils'
 import EventModal from '@/components/EventModal'
 import SettlementView from '@/components/SettlementView'
 import { useSession } from 'next-auth/react'
+import dynamic from 'next/dynamic'
+
+const QRCode = dynamic(() => import('@/components/QRCode'), { ssr: false })
 
 type Room = any // Type properly in real app
 
@@ -21,16 +24,21 @@ export default function RoomPage() {
   const [showEventModal, setShowEventModal] = useState(false)
   const [eventType, setEventType] = useState<'BUY_IN' | 'REBUY' | 'CASH_OUT'>('BUY_IN')
   const [showSettlement, setShowSettlement] = useState(false)
+  const [showQR, setShowQR] = useState(false)
+  const [copiedRoomCode, setCopiedRoomCode] = useState(false)
 
   const fetchRoom = async () => {
     const res = await fetch(`/api/rooms/${code}`)
-    if (res.ok) {
+    try {
       const data = await res.json()
-      setRoom(data)
-      setError('')
-    } else {
-      const data = await res.json()
-      setError(data.error || 'Failed to load room')
+      if (res.ok) {
+        setRoom(data)
+        setError('')
+      } else {
+        setError(data.error || 'Failed to load room')
+      }
+    } catch (err) {
+      setError('Failed to load room data')
     }
     setLoading(false)
   }
@@ -41,6 +49,19 @@ export default function RoomPage() {
     const interval = setInterval(fetchRoom, 2000)
     return () => clearInterval(interval)
   }, [code])
+
+  useEffect(() => {
+    if (!showQR) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowQR(false)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [showQR])
 
   const handleEndRoom = async () => {
     if (!confirm('End this room? This will compute final settlement.')) return
@@ -53,6 +74,13 @@ export default function RoomPage() {
       const data = await res.json()
       alert(data.error || 'Failed to end room')
     }
+  }
+
+  const handleCopyRoomCode = async () => {
+    if (!room) return
+    await navigator.clipboard.writeText(room.code)
+    setCopiedRoomCode(true)
+    window.setTimeout(() => setCopiedRoomCode(false), 1500)
   }
 
   if (loading) {
@@ -113,15 +141,23 @@ export default function RoomPage() {
         {/* Header */}
         <div className="bg-slate-800 rounded-lg p-6 mb-6">
           <div className="flex justify-between items-start">
-            <div>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold text-white mb-2">{settings.name}</h1>
-              <div className="flex gap-4 text-sm text-slate-400">
+              <div className="flex gap-4 text-sm text-slate-400 mb-4">
                 <div>Code: <span className="font-mono text-white">{room.code}</span></div>
                 <div>Host: {room.host.name}</div>
                 <div>Blinds: {settings.blinds || 'N/A'}</div>
               </div>
             </div>
             <div className="flex gap-2">
+              {isHost && (
+                <button
+                  onClick={() => setShowQR(!showQR)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                >
+                  {showQR ? 'Hide QR Code' : 'Show QR Code'}
+                </button>
+              )}
               {room.endedAt ? (
                 <button
                   onClick={() => setShowSettlement(true)}
@@ -266,6 +302,43 @@ export default function RoomPage() {
           roomCode={code}
           onClose={() => setShowSettlement(false)}
         />
+      )}
+
+      {showQR && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-xl"
+          onMouseDown={() => setShowQR(false)}
+        >
+          <div
+            className="relative w-full max-w-[min(92vw,680px)] rounded-2xl border border-white/10 bg-slate-950/95 p-6 shadow-2xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowQR(false)}
+              className="absolute right-4 top-4 rounded-full bg-slate-900/90 px-3 py-2 text-white shadow-lg hover:bg-slate-800"
+              aria-label="Close QR code"
+            >
+              ✕
+            </button>
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex w-full justify-center">
+                <QRCode value={room.code} size={620} label={`QR code for room ${room.code}`} />
+              </div>
+              <div className="text-center text-slate-100">
+                <p className="text-xl font-semibold">Scan this QR code with the mobile app</p>
+                <p className="text-sm text-slate-400 mt-2">
+                  Room code: <span className="font-mono text-white">{room.code}</span>
+                </p>
+                <button
+                  onClick={handleCopyRoomCode}
+                  className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                >
+                  {copiedRoomCode ? 'Copied' : 'Copy Room Code'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
