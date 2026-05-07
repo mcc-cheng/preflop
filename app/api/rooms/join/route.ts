@@ -31,8 +31,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Room has ended' }, { status: 400 })
     }
 
-    // Check if already a member
+    const settings = room.settings as any
     const existingMember = room.members.find(m => m.userId === user.id)
+    if (!existingMember && settings.maxPlayers && room.members.length >= settings.maxPlayers) {
+      return NextResponse.json({ error: 'Room is full' }, { status: 400 })
+    }
+
+    // Check if already a member
     if (!existingMember) {
       await prisma.roomMember.upsert({
         where: {

@@ -247,7 +247,7 @@ This is an **MVP poker payouts tracker** with:
 - **GET-DATABASE.md** - Detailed database setup
 - **SETUP.md** - Full setup guide
 - **QUICKSTART.md** - Feature overview
-- **README.md** - Complete documentation
+- **[README.md](../README.md)** - Complete documentation
 
 ---
 

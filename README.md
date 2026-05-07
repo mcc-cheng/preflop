@@ -303,10 +303,10 @@ mobile/
 
 ## 📖 Documentation
 
-- **MOBILE-APP-SETUP.md** - Mobile app guide
-- **APP-DESCRIPTION.md** - Product overview
-- **NEW-FEATURES.md** - Feature list
-- **WHATS-NEW.md** - Recent updates
+- **[MOBILE-APP-SETUP.md](docs/MOBILE-APP-SETUP.md)** - Mobile app guide
+- **[APP-DESCRIPTION.md](docs/APP-DESCRIPTION.md)** - Product overview
+- **[NEW-FEATURES.md](docs/NEW-FEATURES.md)** - Feature list
+- **[WHATS-NEW.md](docs/WHATS-NEW.md)** - Recent updates
 
 ---
 

@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-import { handleApiError, nameSchema, phoneSchema, usernameSchema } from '@/lib/api'
+import { handleApiError, nameSchema, usernameSchema } from '@/lib/api'
 
 const RegisterSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(8).max(128),
   name: nameSchema,
   username: usernameSchema,
-  phone: phoneSchema,
+  phone: z.string().trim().min(7).max(32),
 })
 
 export async function POST(request: Request) {
@@ -40,8 +40,7 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     if (error?.code === 'P2002') {
-      const target = Array.isArray(error.meta?.target) ? error.meta.target.join(', ') : 'field'
-      return NextResponse.json({ error: `${target} already exists` }, { status: 400 })
+      return NextResponse.json({ error: 'An account with those details already exists' }, { status: 400 })
     }
 
     return handleApiError(error)

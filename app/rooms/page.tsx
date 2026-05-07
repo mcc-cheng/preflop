@@ -1,6 +1,5 @@
 import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getPaymentSetupStatus } from '@/lib/payment-eligibility'
 import { roomUserSelect } from '@/lib/api'
 import Link from 'next/link'
 import LogoutButton from '@/components/LogoutButton'
@@ -23,7 +22,6 @@ export default async function RoomsPage({
   const user = await requireAuth()
   const params = await searchParams
   const showingHistory = params?.history === 'true'
-  const paymentStatus = await getPaymentSetupStatus(user.id)
 
   const rooms = await prisma.room.findMany({
     where: {
@@ -87,37 +85,19 @@ export default async function RoomsPage({
             </Link>
             <Link
               href="/rooms/new"
-              className={`px-6 py-2 text-white rounded-lg font-semibold transition ${
-                paymentStatus.canPlay ? 'bg-blue-600 hover:bg-blue-700' : 'pointer-events-none bg-blue-900/60 text-blue-100/60'
-              }`}
-              aria-disabled={!paymentStatus.canPlay}
+              className="px-6 py-2 text-white rounded-lg font-semibold transition bg-blue-600 hover:bg-blue-700"
             >
               Create Room
             </Link>
             <Link
               href="/rooms/join"
-              className={`px-6 py-2 rounded-lg font-semibold transition ${
-                paymentStatus.canPlay ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'pointer-events-none bg-slate-800 text-slate-500'
-              }`}
-              aria-disabled={!paymentStatus.canPlay}
+              className="px-6 py-2 rounded-lg font-semibold transition bg-slate-700 hover:bg-slate-600 text-white"
             >
               Join Room
             </Link>
             <LogoutButton />
           </div>
         </div>
-
-        {!paymentStatus.canPlay && (
-          <div className="mb-6 rounded-lg border border-blue-500/30 bg-blue-950/40 p-4 text-blue-100">
-            <div className="font-semibold">Add two payment types to play</div>
-            <p className="mt-1 text-sm text-blue-100/75">
-              You have {paymentStatus.linkedTypeCount} of {paymentStatus.requiredTypeCount} required payment types linked.
-            </p>
-            <Link href="/settings" className="mt-3 inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-              Manage Payment Methods
-            </Link>
-          </div>
-        )}
 
         <div className="mb-6 flex rounded-lg bg-slate-800 p-1">
           <Link

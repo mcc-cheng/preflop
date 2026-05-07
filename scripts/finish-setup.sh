@@ -7,7 +7,7 @@ echo ""
 # Check if .env exists
 if [ ! -f .env ]; then
     echo "❌ .env file not found!"
-    echo "Run ./setup-database.sh first"
+    echo "Run ./scripts/setup-database.sh first"
     exit 1
 fi
 

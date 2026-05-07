@@ -9,7 +9,8 @@ echo "This will require your password (sudo access)"
 echo ""
 
 # Move the plist file to the system LaunchDaemons folder
-sudo cp limit.maxfiles.plist /Library/LaunchDaemons/limit.maxfiles.plist
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+sudo cp "$SCRIPT_DIR/limit.maxfiles.plist" /Library/LaunchDaemons/limit.maxfiles.plist
 
 # Set correct permissions
 sudo chown root:wheel /Library/LaunchDaemons/limit.maxfiles.plist

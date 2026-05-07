@@ -46,6 +46,12 @@ export async function POST(
         throw new Error('ROOM_ALREADY_ENDED')
       }
 
+      // Cancel any cash-out requests that were never resolved
+      await tx.cashOutRequest.updateMany({
+        where: { roomId: room.id, status: 'PENDING' },
+        data: { status: 'REJECTED', resolvedAt: endedAt },
+      })
+
       const netsByUser = new Map<string, number>()
       for (const event of room.events) {
         const current = netsByUser.get(event.userId) || 0

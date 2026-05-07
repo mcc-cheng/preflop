@@ -218,7 +218,7 @@ PORT=3001 npm run dev
 ## 📞 Need Help?
 
 - See `SETUP.md` for detailed setup instructions
-- See `README.md` for full documentation
+- See `../README.md` for full documentation
 - Check `lib/settlement.ts` for settlement logic
 - Check `lib/payments/provider.ts` for payment interface
 
