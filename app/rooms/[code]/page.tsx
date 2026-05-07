@@ -11,7 +11,7 @@ import dynamic from 'next/dynamic'
 
 const QRCode = dynamic(() => import('@/components/QRCode'), { ssr: false })
 
-type Room = any // Type properly in real app
+type Room = any
 
 export default function RoomPage() {
   const params = useParams()
@@ -26,6 +26,7 @@ export default function RoomPage() {
   const [showSettlement, setShowSettlement] = useState(false)
   const [showQR, setShowQR] = useState(false)
   const [copiedRoomCode, setCopiedRoomCode] = useState(false)
+  const [requestActionLoading, setRequestActionLoading] = useState<string | null>(null)
 
   const fetchRoom = async () => {
     const res = await fetch(`/api/rooms/${code}`)
@@ -45,27 +46,21 @@ export default function RoomPage() {
 
   useEffect(() => {
     fetchRoom()
-    // Poll every 2 seconds for updates (MVP approach)
     const interval = setInterval(fetchRoom, 2000)
     return () => clearInterval(interval)
   }, [code])
 
   useEffect(() => {
     if (!showQR) return
-
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setShowQR(false)
-      }
+      if (event.key === 'Escape') setShowQR(false)
     }
-
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [showQR])
 
   const handleEndRoom = async () => {
     if (!confirm('End this room? This will compute final settlement.')) return
-
     const res = await fetch(`/api/rooms/${code}/end`, { method: 'POST' })
     if (res.ok) {
       fetchRoom()
@@ -81,6 +76,21 @@ export default function RoomPage() {
     await navigator.clipboard.writeText(room.code)
     setCopiedRoomCode(true)
     window.setTimeout(() => setCopiedRoomCode(false), 1500)
+  }
+
+  const handleRequestAction = async (requestId: string, action: 'approve' | 'reject') => {
+    setRequestActionLoading(requestId + action)
+    const res = await fetch(`/api/rooms/${code}/cashout-requests/${requestId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    })
+    setRequestActionLoading(null)
+    if (!res.ok) {
+      const data = await res.json()
+      alert(data.error || `Failed to ${action} request`)
+    }
+    fetchRoom()
   }
 
   if (loading) {
@@ -107,9 +117,9 @@ export default function RoomPage() {
   if (!room) return null
 
   const settings = room.settings as any
-  const isHost = room.hostId === (session?.user as any)?.id
+  const currentUserId = (session?.user as any)?.id
+  const isHost = room.hostId === currentUserId
 
-  // Calculate player stats
   const playerStats = room.members.map((member: any) => {
     const userEvents = room.events.filter((e: any) => e.userId === member.userId)
     const totalBuyIn = userEvents
@@ -119,17 +129,20 @@ export default function RoomPage() {
       .filter((e: any) => e.type === 'CASH_OUT')
       .reduce((sum: number, e: any) => sum + e.amount, 0)
     const net = totalCashOut - totalBuyIn
+    const pendingRequest = room.cashOutRequests?.find(
+      (r: any) => r.userId === member.userId && r.status === 'PENDING'
+    )
 
-    return {
-      user: member.user,
-      totalBuyIn,
-      totalCashOut,
-      net
-    }
+    return { user: member.user, totalBuyIn, totalCashOut, net, pendingRequest }
   })
 
   const totalBuyIns = playerStats.reduce((sum: number, p: any) => sum + p.totalBuyIn, 0)
   const totalCashOuts = playerStats.reduce((sum: number, p: any) => sum + p.totalCashOut, 0)
+  const tableBalance = totalBuyIns - totalCashOuts
+
+  const pendingRequests = (room.cashOutRequests ?? []).filter((r: any) => r.status === 'PENDING')
+
+  const myPendingRequest = pendingRequests.find((r: any) => r.userId === currentUserId)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -198,16 +211,59 @@ export default function RoomPage() {
             </div>
             <div className="bg-slate-700 rounded-lg p-4">
               <div className="text-slate-400 text-sm">Table Balance</div>
-              <div className="text-2xl font-bold text-white">${centsToUSD(totalBuyIns - totalCashOuts)}</div>
+              <div className="text-2xl font-bold text-white">${centsToUSD(tableBalance)}</div>
             </div>
           </div>
         </div>
+
+        {/* Host-only: Pending Cash Out Requests */}
+        {isHost && !room.endedAt && pendingRequests.length > 0 && (
+          <div className="bg-amber-950 border border-amber-600 rounded-lg p-6 mb-6">
+            <h2 className="text-lg font-bold text-amber-400 mb-4">
+              Pending Cash Out Requests ({pendingRequests.length})
+            </h2>
+            <div className="space-y-3">
+              {pendingRequests.map((req: any) => (
+                <div key={req.id} className="flex items-center justify-between bg-amber-900/40 rounded-lg px-4 py-3">
+                  <div>
+                    <span className="font-semibold text-white">{req.user.name}</span>
+                    <span className="text-amber-300 ml-3 font-mono">${centsToUSD(req.amountCents)}</span>
+                    <span className="text-slate-400 text-xs ml-3">{formatTimestamp(req.createdAt)}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleRequestAction(req.id, 'approve')}
+                      disabled={requestActionLoading !== null}
+                      className="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm rounded-lg font-medium"
+                    >
+                      {requestActionLoading === req.id + 'approve' ? '...' : 'Approve'}
+                    </button>
+                    <button
+                      onClick={() => handleRequestAction(req.id, 'reject')}
+                      disabled={requestActionLoading !== null}
+                      className="px-3 py-1.5 bg-red-700 hover:bg-red-800 disabled:opacity-50 text-white text-sm rounded-lg font-medium"
+                    >
+                      {requestActionLoading === req.id + 'reject' ? '...' : 'Reject'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Player: own pending request banner */}
+        {!isHost && myPendingRequest && !room.endedAt && (
+          <div className="bg-amber-950 border border-amber-600 rounded-lg px-5 py-4 mb-6 text-amber-300">
+            Your cash out request for <span className="font-mono font-bold">${centsToUSD(myPendingRequest.amountCents)}</span> is waiting for host approval.
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Players */}
           <div className="bg-slate-800 rounded-lg p-6">
             <h2 className="text-xl font-bold text-white mb-4">Players</h2>
-            
+
             {!room.endedAt && (
               <div className="flex gap-2 mb-4">
                 <button
@@ -223,10 +279,17 @@ export default function RoomPage() {
                   Rebuy
                 </button>
                 <button
-                  onClick={() => { setEventType('CASH_OUT'); setShowEventModal(true) }}
+                  onClick={() => {
+                    if (!isHost && myPendingRequest) {
+                      alert('Your cash out request is already pending host approval.')
+                      return
+                    }
+                    setEventType('CASH_OUT')
+                    setShowEventModal(true)
+                  }}
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm"
                 >
-                  Cash Out
+                  {!isHost && myPendingRequest ? 'Cash Out (Pending)' : 'Cash Out'}
                 </button>
               </div>
             )}
@@ -240,6 +303,11 @@ export default function RoomPage() {
                       <div className="text-sm text-slate-400">
                         In: ${centsToUSD(stat.totalBuyIn)} | Out: ${centsToUSD(stat.totalCashOut)}
                       </div>
+                      {stat.pendingRequest && (
+                        <div className="text-xs text-amber-400 mt-1">
+                          Pending cash out: ${centsToUSD(stat.pendingRequest.amountCents)}
+                        </div>
+                      )}
                     </div>
                     <div className={`text-lg font-bold ${stat.net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {stat.net >= 0 ? '+' : ''}${centsToUSD(stat.net)}
@@ -263,7 +331,7 @@ export default function RoomPage() {
                       <div>
                         <span className="font-semibold text-white">{event.user.name}</span>
                         <span className="text-slate-400 mx-2">
-                          {event.type === 'BUY_IN' ? 'bought in' : 
+                          {event.type === 'BUY_IN' ? 'bought in' :
                            event.type === 'REBUY' ? 'rebought' : 'cashed out'}
                         </span>
                         <span className={`font-bold ${

@@ -35,7 +35,13 @@ export async function GET(
           orderBy: {
             createdAt: 'desc'
           }
-        }
+        },
+        cashOutRequests: {
+          include: {
+            user: { select: roomUserSelect },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       }
     })
 

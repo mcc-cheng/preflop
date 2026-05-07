@@ -17,10 +17,11 @@ model User {
   profilePicture String?     @default("/default-avatar.png")
   createdAt     DateTime     @default(now())
   
-  hostedRooms   Room[]       @relation("HostedRooms")
-  memberships   RoomMember[]
-  events        Event[]
-  paymentMethods PaymentMethod[]
+  hostedRooms     Room[]           @relation("HostedRooms")
+  memberships     RoomMember[]
+  events          Event[]
+  cashOutRequests CashOutRequest[]
+  paymentMethods  PaymentMethod[]
   
   // Friends system
   friendshipsInitiated Friendship[] @relation("UserFriendships")
@@ -46,10 +47,11 @@ model Room {
   // Settings stored as JSON: { name, defaultBuyIn, blinds, currency, maxPlayers }
   settings  Json
   
-  members   RoomMember[]
-  events    Event[]
-  settlements Settlement[]
-  
+  members          RoomMember[]
+  events           Event[]
+  settlements      Settlement[]
+  cashOutRequests  CashOutRequest[]
+
   @@index([code])
   @@index([hostId])
 }
@@ -79,6 +81,12 @@ enum EventType {
   NOTE
 }
 
+enum CashOutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Event {
   id        String     @id @default(cuid())
   roomId    String
@@ -96,6 +104,21 @@ model Event {
   metadata  Json?
   
   @@index([roomId, createdAt])
+  @@index([userId])
+}
+
+model CashOutRequest {
+  id          String        @id @default(cuid())
+  roomId      String
+  room        Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountCents Int
+  status      CashOutStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  resolvedAt  DateTime?
+
+  @@index([roomId, status])
   @@index([userId])
 }
 
