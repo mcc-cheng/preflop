@@ -16,19 +16,15 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { code } = JoinRoomSchema.parse(body)
 
-    const room = await prisma.room.findUnique({
-      where: { code: code.toUpperCase() },
+    const room = await prisma.room.findFirst({
+      where: { code: code.toUpperCase(), endedAt: null },
       include: {
         members: true
       }
     })
 
     if (!room) {
-      return NextResponse.json({ error: 'Room not found' }, { status: 404 })
-    }
-
-    if (room.endedAt) {
-      return NextResponse.json({ error: 'Room has ended' }, { status: 400 })
+      return NextResponse.json({ error: 'Room not found or has ended' }, { status: 404 })
     }
 
     const settings = room.settings as any

@@ -18,10 +18,8 @@ export async function PATCH(
     const code = roomCodeSchema.parse(rawCode)
     const { action } = ActionSchema.parse(await request.json())
 
-    const room = await prisma.room.findUnique({ where: { code } })
-
+    const room = await prisma.room.findFirst({ where: { code, endedAt: null } })
     if (!room) return jsonError('Room not found', 404)
-    if (room.endedAt) return jsonError('Room has ended', 400)
     if (room.hostId !== user.id) return jsonError('Only the host can approve or reject cash out requests', 403)
 
     const cashOutRequest = await prisma.cashOutRequest.findUnique({

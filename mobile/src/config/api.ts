@@ -4,7 +4,10 @@ import Constants from 'expo-constants';
 // For development: Use your computer's IP address or ngrok
 // For production: Use your deployed backend URL
 
-export const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:3000';
+export const API_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  Constants.expoConfig?.extra?.apiUrl ||
+  'http://localhost:3000';
 
 export const API_ENDPOINTS = {
   // Auth

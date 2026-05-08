@@ -53,24 +53,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      // Using NextAuth credentials endpoint
-      const response = await axios.post(`${API_URL}/api/auth/callback/credentials`, {
-        email,
-        password,
-        json: true
-      });
+      const response = await axios.post(`${API_URL}/api/auth/mobile`, { email, password });
 
-      if (response.data.user) {
-        const userData = response.data.user;
-        const authToken = response.data.token || 'session-token'; // NextAuth uses sessions
-        
-        await SecureStore.setItemAsync('token', authToken);
-        await SecureStore.setItemAsync('user', JSON.stringify(userData));
-        
-        setToken(authToken);
-        setUser(userData);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
-      }
+      const { token: authToken, user: userData } = response.data;
+
+      await SecureStore.setItemAsync('token', authToken);
+      await SecureStore.setItemAsync('user', JSON.stringify(userData));
+
+      setToken(authToken);
+      setUser(userData);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Login failed');
     }

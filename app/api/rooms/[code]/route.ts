@@ -4,6 +4,9 @@ import { requireAuth } from '@/lib/auth'
 import { getPlayerNets } from '@/lib/settlement'
 import { handleApiError, roomCodeSchema, roomUserSelect } from '@/lib/api'
 
+// Matches a Prisma CUID (starts with 'c', 25 chars) or a 6-char room code
+const CUID_RE = /^c[a-z0-9]{24}$/i
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ code: string }> }
@@ -11,10 +14,15 @@ export async function GET(
   try {
     const user = await requireAuth()
     const { code: rawCode } = await params
-    const code = roomCodeSchema.parse(rawCode)
 
-    const room = await prisma.room.findUnique({
-      where: { code },
+    // Build the where clause: accept a room ID (for past games) or an active room code.
+    // page.tsx uppercases the URL param, so lowercase before using as a DB ID.
+    const where = CUID_RE.test(rawCode)
+      ? { id: rawCode.toLowerCase() }
+      : { code: roomCodeSchema.parse(rawCode), endedAt: null as Date | null }
+
+    const room = await prisma.room.findFirst({
+      where,
       include: {
         host: {
           select: roomUserSelect,
@@ -37,9 +45,11 @@ export async function GET(
           }
         },
         cashOutRequests: {
-          include: {
-            user: { select: roomUserSelect },
-          },
+          include: { user: { select: roomUserSelect } },
+          orderBy: { createdAt: 'asc' },
+        },
+        buyInRequests: {
+          include: { user: { select: roomUserSelect } },
           orderBy: { createdAt: 'asc' },
         },
       }

@@ -27,6 +27,7 @@ function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const isRegister = searchParams.get('register') === 'true'
+  const redirectTo = searchParams.get('redirect') || '/rooms'
 
   const [isRegistering, setIsRegistering] = useState(isRegister)
   const [registrationStep, setRegistrationStep] = useState(1)
@@ -75,7 +76,7 @@ function LoginContent() {
     } else {
       const result = await signIn('credentials', { email, password, redirect: false })
       if (result?.ok) {
-        router.push('/rooms')
+        router.push(redirectTo)
       } else {
         setError('Invalid email or password')
       }
@@ -267,7 +268,7 @@ function LoginContent() {
             )}
 
             <button
-              onClick={() => router.push('/rooms')}
+              onClick={() => router.push(redirectTo)}
               disabled={!canContinue}
               className="mt-5 w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg font-semibold transition"
             >

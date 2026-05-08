@@ -39,17 +39,13 @@ export async function POST(
     const data = CreateEventSchema.parse(body)
     const amount = data.amountCents ?? usdToCents(data.amount as number)
 
-    const room = await prisma.room.findUnique({
-      where: { code },
+    const room = await prisma.room.findFirst({
+      where: { code, endedAt: null },
       include: { members: true }
     })
 
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 })
-    }
-
-    if (room.endedAt) {
-      return NextResponse.json({ error: 'Room has ended' }, { status: 400 })
     }
 
     const isMember = room.members.some(m => m.userId === user.id)
@@ -58,6 +54,21 @@ export async function POST(
     }
 
     const isHost = room.hostId === user.id
+
+    if (!isHost && (data.type === 'BUY_IN' || data.type === 'REBUY')) {
+      const existingPending = await prisma.buyInRequest.findFirst({
+        where: { roomId: room.id, userId: user.id, status: 'PENDING' },
+      })
+      if (existingPending) {
+        return jsonError('You already have a pending buy-in request', 400)
+      }
+
+      const buyInRequest = await prisma.buyInRequest.create({
+        data: { roomId: room.id, userId: user.id, type: data.type, amountCents: amount },
+        include: { user: { select: roomUserSelect } },
+      })
+      return NextResponse.json({ pending: true, request: buyInRequest }, { status: 202 })
+    }
 
     if (data.type === 'CASH_OUT') {
       const tableBalance = await getTableBalanceCents(room.id)

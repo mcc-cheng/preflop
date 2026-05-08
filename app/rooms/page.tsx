@@ -133,10 +133,11 @@ export default async function RoomsPage({
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {visibleRooms.map((room) => {
               const settings = room.settings as any
+              const href = room.endedAt ? `/rooms/${room.id}` : `/rooms/${room.code}`
               return (
                 <Link
                   key={room.id}
-                  href={`/rooms/${room.code}`}
+                  href={href}
                   className="bg-slate-800 hover:bg-slate-750 rounded-lg p-6 transition"
                 >
                   <div className="flex justify-between items-start mb-4">
@@ -151,9 +152,11 @@ export default async function RoomsPage({
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2 text-sm text-slate-400">
-                    <div>Code: <span className="font-mono text-white">{room.code}</span></div>
+                    {!room.endedAt && (
+                      <div>Code: <span className="font-mono text-white">{room.code}</span></div>
+                    )}
                     <div>Host: {room.host.name}</div>
                     <div>Players: {room._count.members}</div>
                     <div>Events: {room._count.events}</div>

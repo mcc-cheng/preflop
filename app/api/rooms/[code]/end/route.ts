@@ -14,8 +14,8 @@ export async function POST(
     const code = roomCodeSchema.parse(rawCode)
 
     const settlement = await prisma.$transaction(async tx => {
-      const room = await tx.room.findUnique({
-        where: { code },
+      const room = await tx.room.findFirst({
+        where: { code, endedAt: null },
         include: {
           members: true,
           events: true,
@@ -30,10 +30,6 @@ export async function POST(
         throw new Error('FORBIDDEN')
       }
 
-      if (room.endedAt) {
-        throw new Error('ROOM_ALREADY_ENDED')
-      }
-
       const endedAt = new Date()
       const update = await tx.room.updateMany({
         where: {
@@ -46,8 +42,12 @@ export async function POST(
         throw new Error('ROOM_ALREADY_ENDED')
       }
 
-      // Cancel any cash-out requests that were never resolved
+      // Cancel any unresolved requests
       await tx.cashOutRequest.updateMany({
+        where: { roomId: room.id, status: 'PENDING' },
+        data: { status: 'REJECTED', resolvedAt: endedAt },
+      })
+      await tx.buyInRequest.updateMany({
         where: { roomId: room.id, status: 'PENDING' },
         data: { status: 'REJECTED', resolvedAt: endedAt },
       })

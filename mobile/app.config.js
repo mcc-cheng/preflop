@@ -33,7 +33,7 @@ module.exports = {
     },
     plugins: ['expo-secure-store'],
     extra: {
-      apiUrl: process.env.API_URL || 'http://localhost:3000',
+      apiUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000',
     },
   },
 };

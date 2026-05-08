@@ -18,7 +18,7 @@ npm run lint         # Run Next.js ESLint
 # Database
 npm run db:push      # Sync Prisma schema to database (no migration files)
 npm run db:migrate   # Create and apply a new migration
-npm run db:seed      # Seed demo data (alice, bob, charlie + room DEMO01)
+npm run db:seed      # Seed demo data (alice, bob, charlie + room DEMXYZ)
 npm run db:studio    # Open Prisma Studio GUI at localhost:5555
 ```
 
@@ -110,4 +110,4 @@ Required in `.env`:
 | bob@example.com | password | Apple Pay |
 | charlie@example.com | password | Zelle |
 
-Room code: `DEMO01`
+Room code: `DEMXYZ`

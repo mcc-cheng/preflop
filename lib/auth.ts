@@ -1,6 +1,8 @@
 import { getServerSession } from 'next-auth/next'
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import { decode } from 'next-auth/jwt'
+import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
@@ -67,6 +69,17 @@ export async function getCurrentUser() {
 }
 
 export async function requireAuth() {
+  // Support mobile clients sending Authorization: Bearer <token>
+  const headersList = await headers()
+  const authorization = headersList.get('authorization')
+  if (authorization?.startsWith('Bearer ')) {
+    const bearerToken = authorization.slice(7)
+    const decoded = await decode({ token: bearerToken, secret: process.env.NEXTAUTH_SECRET! })
+    if (decoded?.id) {
+      return { id: decoded.id as string, email: decoded.email as string, name: decoded.name as string }
+    }
+  }
+
   const user = await getCurrentUser()
   if (!user) {
     throw new Error('Unauthorized')
