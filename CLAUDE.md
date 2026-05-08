@@ -18,13 +18,20 @@ npm run lint         # Run Next.js ESLint
 # Database
 npm run db:push      # Sync Prisma schema to database (no migration files)
 npm run db:migrate   # Create and apply a new migration
-npm run db:seed      # Seed demo data (alice, bob, charlie + room DEMO01)
+npm run db:seed      # Seed demo data (alice, bob, charlie + room DEMXYZ)
 npm run db:studio    # Open Prisma Studio GUI at localhost:5555
 ```
 
 Mobile app (in `mobile/`):
 ```bash
 npx expo start       # Start Expo dev server
+```
+
+Setup scripts (in `scripts/`):
+```bash
+./scripts/setup-database.sh   # Interactive database setup
+./scripts/finish-setup.sh     # Run after configuring .env
+./scripts/fix-file-limit.sh   # Fix macOS "too many open files" error
 ```
 
 ## Architecture
@@ -38,15 +45,25 @@ npx expo start       # Start Expo dev server
 
 ### Key directories
 - `app/api/` — All API routes (15+ endpoints)
-- `lib/` — Core business logic: `settlement.ts` (algorithm), `auth.ts` (NextAuth config + `getCurrentUser()`), `api.ts` (response helpers + Zod schemas), `prisma.ts` (singleton client)
+- `lib/` — Core business logic: `settlement.ts` (algorithm), `auth.ts` (NextAuth config + `getCurrentUser()`), `api.ts` (response helpers, Zod schemas, `validatePaymentIdentifier()`), `prisma.ts` (singleton client)
 - `components/` — React UI components (EventModal, SettlementView, QRCode, etc.)
-- `prisma/schema.prisma` — 11 models: User, Room, RoomMember, Event, Settlement, PaymentMethod, UserStats, Friendship, FriendRequest
+- `prisma/schema.prisma` — 12 models: User, Room, RoomMember, Event, CashOutRequest, Settlement, PaymentMethod, UserStats, Friendship, FriendRequest
 - `mobile/src/` — Expo app with screens, navigation (tab + stack), AuthContext
+- `docs/` — Project documentation
+- `scripts/` — Setup and utility shell scripts
 
 ### Data model conventions
 - **Money is always stored in cents** (integers). Divide by 100 for display only. This prevents floating-point rounding errors in settlement math.
 - All event records are append-only (no edits). Transactions are immutable.
 - Room codes are unique 6-character alphanumeric strings.
+
+### Cash-out approval flow
+Non-host players cannot cash out directly. When a player submits a CASH_OUT:
+1. API validates amount ≤ table balance (totalBuyIns − totalCashOuts)
+2. Creates a `CashOutRequest` (PENDING) instead of an Event
+3. Host sees a pending requests panel and can approve or reject
+4. On approve: balance re-checked inside a **Serializable** transaction, then Event created atomically
+5. On room end: all remaining PENDING requests are auto-rejected
 
 ### Settlement algorithm (`lib/settlement.ts`)
 Greedy matching: compute each player's net (cashOut − buyIns), split into debtors and creditors sorted by magnitude, match largest pairs. The result is stored as a JSON array of transfer edges in the `Settlement` table.
@@ -54,11 +71,28 @@ Greedy matching: compute each player's net (cashOut − buyIns), split into debt
 ### API patterns
 - All routes call `requireAuth()` (from `lib/auth.ts`) before any data access — it returns the current user or throws a 401.
 - Room-scoped endpoints verify membership before returning data.
-- `handleApiError()` (from `lib/api.ts`) is the centralized error handler.
+- `handleApiError()` (from `lib/api.ts`) is the centralized error handler — never return raw `error.message`.
 - Request bodies are validated with Zod schemas defined in `lib/api.ts`.
+- `validatePaymentIdentifier(type, identifier)` enforces per-platform rules for all payment method writes.
+
+### Payment method identifier rules
+| Type | Rule |
+|---|---|
+| Venmo | 5–30 chars; letters/numbers/periods/hyphens; must start and end with letter or number |
+| Cash App | Optional `$` prefix; 1–20 chars; must start with a letter; letters/numbers/underscores |
+| Zelle | Valid email or phone number |
+| Apple Pay | Valid email or phone number |
+| PayPal | 1–20 char username or email address |
+| Bank Transfer | 2–120 chars (free-form) |
+| Debit Card | Exactly 4 digits |
 
 ### Auth flow
-Credentials provider → bcrypt verify → JWT token (no session table). Protected pages use NextAuth `useSession` on the client or `getServerSession` on the server.
+Credentials provider → bcrypt verify → JWT token (no session table). Registration is a 2-step flow: account info (phone required) → payment methods (minimum 2 required before accessing the app).
+
+### Security notes
+- Payment method `type` is immutable after creation — cannot be changed via PATCH.
+- Registration duplicate errors return a generic message (no field-level enumeration).
+- `maxPlayers` is enforced at join time.
 
 ## Environment Variables
 
@@ -76,4 +110,4 @@ Required in `.env`:
 | bob@example.com | password | Apple Pay |
 | charlie@example.com | password | Zelle |
 
-Room code: `DEMO01`
+Room code: `DEMXYZ`

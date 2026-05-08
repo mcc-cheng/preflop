@@ -4,6 +4,8 @@ import { requireAuth } from '@/lib/auth'
 import { getPlayerNets, computeSettlement } from '@/lib/settlement'
 import { handleApiError, roomCodeSchema, roomUserSelect } from '@/lib/api'
 
+const CUID_RE = /^c[a-z0-9]{24}$/i
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ code: string }> }
@@ -11,10 +13,13 @@ export async function GET(
   try {
     const user = await requireAuth()
     const { code: rawCode } = await params
-    const code = roomCodeSchema.parse(rawCode)
 
-    const room = await prisma.room.findUnique({
-      where: { code },
+    const where = CUID_RE.test(rawCode)
+      ? { id: rawCode.toLowerCase() }
+      : { code: roomCodeSchema.parse(rawCode) }
+
+    const room = await prisma.room.findFirst({
+      where,
       include: {
         members: {
           include: {

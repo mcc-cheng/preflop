@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth'
 import { z } from 'zod'
 import { handleApiError, roomCodeSchema } from '@/lib/api'
+import { requirePaymentSetup } from '@/lib/payment-eligibility'
 
 const JoinRoomSchema = z.object({
   code: roomCodeSchema,
@@ -11,26 +12,28 @@ const JoinRoomSchema = z.object({
 export async function POST(request: Request) {
   try {
     const user = await requireAuth()
+    await requirePaymentSetup(user.id)
     const body = await request.json()
     const { code } = JoinRoomSchema.parse(body)
 
-    const room = await prisma.room.findUnique({
-      where: { code: code.toUpperCase() },
+    const room = await prisma.room.findFirst({
+      where: { code: code.toUpperCase(), endedAt: null },
       include: {
         members: true
       }
     })
 
     if (!room) {
-      return NextResponse.json({ error: 'Room not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Room not found or has ended' }, { status: 404 })
     }
 
-    if (room.endedAt) {
-      return NextResponse.json({ error: 'Room has ended' }, { status: 400 })
+    const settings = room.settings as any
+    const existingMember = room.members.find(m => m.userId === user.id)
+    if (!existingMember && settings.maxPlayers && room.members.length >= settings.maxPlayers) {
+      return NextResponse.json({ error: 'Room is full' }, { status: 400 })
     }
 
     // Check if already a member
-    const existingMember = room.members.find(m => m.userId === user.id)
     if (!existingMember) {
       await prisma.roomMember.upsert({
         where: {
@@ -57,6 +60,13 @@ export async function POST(request: Request) {
       },
     })
   } catch (error: any) {
+    if (error?.message === 'PAYMENT_SETUP_REQUIRED') {
+      return NextResponse.json(
+        { error: 'Link at least two payment types before joining a room' },
+        { status: 403 }
+      )
+    }
+
     return handleApiError(error)
   }
 }

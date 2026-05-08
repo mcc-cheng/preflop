@@ -98,14 +98,14 @@ async function main() {
   }
 
   // Create demo room (or get existing)
-  let room = await prisma.room.findUnique({
-    where: { code: 'DEMO01' }
+  let room = await prisma.room.findFirst({
+    where: { code: 'DEMXYZ', endedAt: null }
   })
 
   if (!room) {
     room = await prisma.room.create({
       data: {
-        code: 'DEMO01',
+        code: 'DEMXYZ',
         hostId: alice.id,
         settings: {
           name: 'Friday Night Poker',
@@ -146,7 +146,7 @@ async function main() {
 
     console.log('✅ Created sample events')
   } else {
-    console.log('✅ Room DEMO01 already exists')
+    console.log('✅ Room DEMXYZ already exists')
   }
   console.log('\n📊 Summary:')
   console.log('- Alice: $150 in, $0 out = -$150 (owes)')
@@ -156,7 +156,7 @@ async function main() {
   console.log('- alice@example.com / password')
   console.log('- bob@example.com / password')
   console.log('- charlie@example.com / password')
-  console.log('\n🔗 Room code: DEMO01')
+  console.log('\n🔗 Room code: DEMXYZ')
 }
 
 main()

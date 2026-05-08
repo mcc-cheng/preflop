@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth'
 import { generateRoomCode } from '@/lib/utils'
 import { z } from 'zod'
 import { handleApiError, moneyAmountSchema, roomUserSelect } from '@/lib/api'
+import { requirePaymentSetup } from '@/lib/payment-eligibility'
 
 const CreateRoomSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -16,6 +17,7 @@ const CreateRoomSchema = z.object({
 export async function POST(request: Request) {
   try {
     const user = await requireAuth()
+    await requirePaymentSetup(user.id)
     const body = await request.json()
     const data = CreateRoomSchema.parse(body)
 
@@ -68,6 +70,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json(room)
   } catch (error: any) {
+    if (error?.message === 'PAYMENT_SETUP_REQUIRED') {
+      return NextResponse.json(
+        { error: 'Link at least two payment types before creating a room' },
+        { status: 403 }
+      )
+    }
+
     return handleApiError(error)
   }
 }

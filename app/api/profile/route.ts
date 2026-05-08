@@ -47,7 +47,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(profile)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return handleApiError(error)
   }
 }
 
