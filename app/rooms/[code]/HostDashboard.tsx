@@ -1,9 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { centsToUSD, formatTimestamp } from '@/lib/utils'
 import type { RoomDashboardProps } from './types'
+
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000)
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  if (h >= 1) return `${h}h ${m}m`
+  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`
+  return `${s}s`
+}
 
 type Tab = 'Players' | 'Requests' | 'Audit Log'
 
@@ -27,6 +37,13 @@ export default function HostDashboard({
   onShowSettlement,
 }: RoomDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('Players')
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (room.endedAt) return
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [room.endedAt])
 
   const totalPending = pendingBuyInRequests.length + pendingCashOutRequests.length
 
@@ -168,14 +185,22 @@ export default function HostDashboard({
                       <th className="text-right pb-3 px-4">Bought In</th>
                       <th className="text-right pb-3 px-4">Cashed Out</th>
                       <th className="text-right pb-3 px-4">Net P&amp;L</th>
+                      <th className="text-right pb-3 px-4">Time</th>
                       <th className="text-left pb-3 pl-4">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-700">
                     {playerStats.map((stat) => {
                       const isMe = stat.user.id === currentUserId
-                      const lastEvent = room.events?.find((e: any) => e.userId === stat.user.id)
+                      const playerEvents = room.events?.filter((e: any) => e.userId === stat.user.id) ?? []
+                      const lastEvent = playerEvents[0] // events desc-ordered; first = most recent
                       const hasCashedOut = lastEvent?.type === 'CASH_OUT'
+                      const chronoEvents = [...playerEvents].reverse()
+                      const firstBuyIn = chronoEvents.find((e: any) => e.type === 'BUY_IN' || e.type === 'REBUY')
+                      const firstCashOut = chronoEvents.find((e: any) => e.type === 'CASH_OUT')
+                      const startMs = firstBuyIn ? new Date(firstBuyIn.createdAt).getTime() : null
+                      const endMs = firstCashOut ? new Date(firstCashOut.createdAt).getTime() : now
+                      const durationMs = startMs ? endMs - startMs : 0
                       return (
                         <tr key={stat.user.id} className={isMe ? 'bg-blue-900/10' : ''}>
                           <td className="py-3 pr-4">
@@ -193,6 +218,16 @@ export default function HostDashboard({
                           </td>
                           <td className={`py-3 px-4 text-right font-mono font-bold ${stat.net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {stat.net >= 0 ? '+' : ''}${centsToUSD(stat.net)}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-sm">
+                            {startMs ? (
+                              <span className={firstCashOut ? 'text-slate-500' : 'text-slate-300'}>
+                                {formatDuration(durationMs)}
+                                {!firstCashOut && <span className="text-green-400 ml-1 text-xs">●</span>}
+                              </span>
+                            ) : (
+                              <span className="text-slate-600">—</span>
+                            )}
                           </td>
                           <td className="py-3 pl-4">
                             <div className="flex flex-col gap-1">

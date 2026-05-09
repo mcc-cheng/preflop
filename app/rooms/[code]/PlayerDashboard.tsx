@@ -1,10 +1,21 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { centsToUSD, formatTimestamp } from '@/lib/utils'
 import type { RoomDashboardProps } from './types'
 
 type PlayerState = 'NEVER_BOUGHT_IN' | 'BUY_IN_PENDING' | 'ACTIVE' | 'REBUY_PENDING' | 'CASH_OUT_PENDING' | 'CASHED_OUT'
+
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000)
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  if (h >= 1) return `${h}h ${m}m`
+  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`
+  return `${s}s`
+}
 
 export default function PlayerDashboard({
   room,
@@ -39,6 +50,13 @@ export default function PlayerDashboard({
     if (myPendingCashOut) return 'CASH_OUT_PENDING'
     return 'ACTIVE'
   })()
+
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (playerState === 'CASHED_OUT' || room.endedAt) return
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [playerState, room.endedAt])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -147,88 +165,125 @@ export default function PlayerDashboard({
           </button>
         )}
 
-        {/* Table info + player list */}
-        <div className="bg-slate-800 rounded-xl p-6 mb-5">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-white">Table</h2>
-            <span className="text-sm text-slate-400">
-              Balance:{' '}
-              <span className="text-white font-mono font-semibold">${centsToUSD(tableBalance)}</span>
-            </span>
-          </div>
-          <div className="space-y-2">
-            {playerStats.map((stat) => {
-              const isMe = stat.user.id === currentUserId
-              // events are desc-ordered; first match is the player's most recent action
-              const lastEvent = room.events?.find((e: any) => e.userId === stat.user.id)
-              const hasCashedOut = lastEvent?.type === 'CASH_OUT'
-              return (
-                <div
-                  key={stat.user.id}
-                  className={`flex items-center justify-between rounded-lg px-4 py-2.5 ${
-                    isMe ? 'bg-blue-900/30 border border-blue-800' : 'bg-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${hasCashedOut ? 'bg-slate-500' : 'bg-green-400'}`} />
-                    <span className="text-white text-sm font-medium">
-                      {stat.user.name}
-                      {stat.user.id === room.hostId && (
-                        <span className="text-xs text-blue-400 ml-1">(host)</span>
-                      )}
-                      {isMe && <span className="text-xs text-slate-400 ml-1">(you)</span>}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {(() => {
-                      const pr = pendingBuyInRequests.find((r: any) => r.userId === stat.user.id)
-                      return pr ? (
-                        <span className="text-xs text-blue-400">
-                          {pr.type === 'BUY_IN' ? 'buy-in' : 'rebuy'} pending
-                        </span>
-                      ) : null
-                    })()}
-                    {stat.pendingRequest && (
-                      <span className="text-xs text-amber-400">cash-out pending</span>
-                    )}
-                    <span className={`text-xs px-2 py-0.5 rounded ${
-                      hasCashedOut ? 'bg-slate-700 text-slate-400' : 'bg-green-900/50 text-green-400'
-                    }`}>
-                      {hasCashedOut ? 'out' : 'playing'}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* My activity */}
+        {/* Personal transaction history */}
         <div className="bg-slate-800 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-white mb-4">My Activity</h2>
-          {myEvents.length === 0 ? (
-            <div className="text-slate-400 text-sm text-center py-6">No activity yet</div>
-          ) : (
-            <div className="space-y-2">
-              {[...myEvents].reverse().map((event: any) => (
-                <div
-                  key={event.id}
-                  className="flex justify-between items-center bg-slate-700 rounded-lg px-4 py-2.5 text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${event.type === 'CASH_OUT' ? 'bg-green-400' : 'bg-blue-400'}`} />
-                    <span className="text-slate-300">
-                      {event.type === 'BUY_IN' ? 'Bought in' : event.type === 'REBUY' ? 'Rebuy' : 'Cashed out'}
-                    </span>
-                    <span className={`font-bold font-mono ${event.type === 'CASH_OUT' ? 'text-green-400' : 'text-blue-400'}`}>
-                      ${centsToUSD(event.amount)}
-                    </span>
+          <h2 className="text-lg font-bold text-white mb-4">My Transactions</h2>
+
+          {/* Pending requests */}
+          {(myPendingBuyIn || myPendingRebuy || myPendingCashOut) && (
+            <div className="mb-5">
+              <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-2">Pending</div>
+              <div className="space-y-2">
+                {[myPendingBuyIn, myPendingRebuy].filter(Boolean).map((req: any) => (
+                  <div key={req.id} className="flex justify-between items-center bg-blue-950/50 border border-blue-800/60 rounded-lg px-4 py-2.5 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-400 opacity-60" />
+                      <span className="text-blue-300 italic">
+                        {req.type === 'BUY_IN' ? 'Buy In' : 'Rebuy'} — awaiting approval
+                      </span>
+                    </div>
+                    <span className="font-mono text-blue-300 font-bold">${centsToUSD(req.amountCents)}</span>
                   </div>
-                  <div className="text-slate-500 text-xs">{formatTimestamp(event.createdAt)}</div>
-                </div>
-              ))}
+                ))}
+                {myPendingCashOut && (
+                  <div className="flex justify-between items-center bg-amber-950/50 border border-amber-800/60 rounded-lg px-4 py-2.5 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 opacity-60" />
+                      <span className="text-amber-300 italic">Cash Out — awaiting approval</span>
+                    </div>
+                    <span className="font-mono text-amber-300 font-bold">${centsToUSD(myPendingCashOut.amountCents)}</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
+
+          {/* Confirmed history */}
+          {myEvents.length > 0 ? (() => {
+            const chronological = [...myEvents].reverse()
+            const firstBuyIn = chronological.find((e: any) => e.type === 'BUY_IN' || e.type === 'REBUY')
+            const firstCashOut = chronological.find((e: any) => e.type === 'CASH_OUT')
+            const startMs = firstBuyIn ? new Date(firstBuyIn.createdAt).getTime() : null
+            const endMs = firstCashOut ? new Date(firstCashOut.createdAt).getTime() : now
+            const durationMs = startMs ? endMs - startMs : 0
+            const durationHours = durationMs / (1000 * 60 * 60)
+            const net = myStats?.net ?? 0
+            const hourlyRate = firstCashOut && durationHours > (1 / 60) ? net / 100 / durationHours : null
+
+            let runningBalance = 0
+
+            return (
+              <>
+                {(myPendingBuyIn || myPendingRebuy || myPendingCashOut) && (
+                  <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-2">Confirmed</div>
+                )}
+                <div className="space-y-2 mb-5">
+                  {chronological.map((event: any) => {
+                    if (event.type === 'BUY_IN' || event.type === 'REBUY') runningBalance -= event.amount
+                    else runningBalance += event.amount
+                    const balColor = runningBalance > 0 ? 'text-green-400' : runningBalance < 0 ? 'text-red-400' : 'text-slate-400'
+                    const typeLabel = event.type === 'BUY_IN' ? 'Buy In' : event.type === 'REBUY' ? 'Rebuy' : 'Cash Out'
+                    const dotColor = event.type === 'CASH_OUT' ? 'bg-green-400' : 'bg-blue-400'
+                    const amtColor = event.type === 'CASH_OUT' ? 'text-green-400' : 'text-blue-400'
+                    return (
+                      <div key={event.id} className="flex items-center justify-between bg-slate-700 rounded-lg px-4 py-3 text-sm">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+                            <span className="text-white font-medium">{typeLabel}</span>
+                            <span className={`font-mono font-bold ${amtColor}`}>${centsToUSD(event.amount)}</span>
+                          </div>
+                          <span className="text-slate-500 text-xs pl-4">{formatTimestamp(event.createdAt)}</span>
+                        </div>
+                        <div className={`font-mono font-semibold text-sm ${balColor}`}>
+                          {runningBalance >= 0 ? '+' : ''}${centsToUSD(runningBalance)}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Summary */}
+                <div className="border-t border-slate-700 pt-4 space-y-2.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Total bought in</span>
+                    <span className="font-mono text-blue-300 font-semibold">${centsToUSD(myStats?.totalBuyIn ?? 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Total cashed out</span>
+                    <span className="font-mono text-slate-300 font-semibold">${centsToUSD(myStats?.totalCashOut ?? 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-bold border-t border-slate-700 pt-2.5">
+                    <span className="text-slate-200">Net P&amp;L</span>
+                    <span className={`font-mono ${net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {net >= 0 ? '+' : ''}${centsToUSD(net)}
+                    </span>
+                  </div>
+                  {startMs !== null && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-400">Session duration</span>
+                      <span className="font-mono text-slate-300 flex items-center gap-1">
+                        {formatDuration(durationMs)}
+                        {!firstCashOut && !room.endedAt && <span className="text-green-400 text-xs">●</span>}
+                      </span>
+                    </div>
+                  )}
+                  {hourlyRate !== null && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-400">Hourly rate</span>
+                      <span className={`font-mono font-semibold ${hourlyRate >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {hourlyRate >= 0 ? '+' : '−'}${Math.abs(hourlyRate).toFixed(2)}/hr
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )
+          })() : !myPendingBuyIn && !myPendingRebuy && !myPendingCashOut ? (
+            <div className="text-slate-400 text-sm text-center py-10">
+              No transactions yet. Buy in to get started.
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
