@@ -4,19 +4,45 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+interface ChipEntry {
+  color: string
+  denomination: string // dollars, as typed by user
+}
+
 export default function NewRoomPage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [defaultBuyIn, setDefaultBuyIn] = useState('100')
   const [blinds, setBlinds] = useState('1/2')
   const [maxPlayers, setMaxPlayers] = useState('')
+  const [chips, setChips] = useState<ChipEntry[]>([{ color: '', denomination: '' }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const addChip = () => setChips(prev => [...prev, { color: '', denomination: '' }])
+  const removeChip = (i: number) => setChips(prev => prev.filter((_, idx) => idx !== i))
+  const updateChip = (i: number, field: keyof ChipEntry, value: string) =>
+    setChips(prev => prev.map((c, idx) => idx === i ? { ...c, [field]: value } : c))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    // Convert chip denominations from dollars to cents and validate
+    const parsedChips = chips.map(c => ({
+      color: c.color.trim(),
+      denomination: Math.round(parseFloat(c.denomination) * 100),
+    }))
+
+    const invalidChip = parsedChips.find(
+      c => !c.color || isNaN(c.denomination) || c.denomination <= 0
+    )
+    if (invalidChip) {
+      setError('Each chip must have a color and a denomination greater than $0.')
+      setLoading(false)
+      return
+    }
 
     const res = await fetch('/api/rooms', {
       method: 'POST',
@@ -26,8 +52,9 @@ export default function NewRoomPage() {
         defaultBuyIn: parseFloat(defaultBuyIn),
         blinds: blinds || undefined,
         maxPlayers: maxPlayers ? parseInt(maxPlayers) : undefined,
-        currency: 'USD'
-      })
+        currency: 'USD',
+        chips: parsedChips,
+      }),
     })
 
     if (res.ok) {
@@ -70,16 +97,19 @@ export default function NewRoomPage() {
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Default Buy-in (USD) *
                 </label>
-                <input
-                  type="number"
-                  value={defaultBuyIn}
-                  onChange={(e) => setDefaultBuyIn(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="100"
-                  step="0.01"
-                  min="0"
-                  required
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none select-none">$</span>
+                  <input
+                    type="number"
+                    value={defaultBuyIn}
+                    onChange={(e) => setDefaultBuyIn(e.target.value)}
+                    className="w-full pl-7 pr-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="100"
+                    step="0.01"
+                    min="0"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
@@ -107,6 +137,64 @@ export default function NewRoomPage() {
                   placeholder="9"
                   min="2"
                 />
+              </div>
+
+              {/* Chip Configuration */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300">
+                      Chip Configuration *
+                    </label>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Define each chip color and its dollar value
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addChip}
+                    className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white text-sm rounded-lg font-medium transition"
+                  >
+                    + Add Chip
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {chips.map((chip, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={chip.color}
+                        onChange={(e) => updateChip(i, 'color', e.target.value)}
+                        className="flex-1 px-3 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        placeholder="Color (e.g. White, Red, Blue)"
+                        required
+                      />
+                      <div className="relative w-36">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                        <input
+                          type="number"
+                          value={chip.denomination}
+                          onChange={(e) => updateChip(i, 'denomination', e.target.value)}
+                          className="w-full pl-7 pr-3 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                          placeholder="0.25"
+                          step="0.01"
+                          min="0.01"
+                          required
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeChip(i)}
+                        disabled={chips.length === 1}
+                        className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-400 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                        aria-label="Remove chip"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {error && (

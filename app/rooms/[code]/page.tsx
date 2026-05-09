@@ -179,6 +179,7 @@ export default function RoomPage() {
           eventType={eventType}
           defaultAmount={settings.defaultBuyIn}
           isHost={isHost}
+          chipTypes={room.chipTypes}
           onClose={() => setShowEventModal(false)}
           onSuccess={() => { setShowEventModal(false); fetchRoom() }}
         />

@@ -43,6 +43,11 @@ interface CashOutRequest {
   status: string;
 }
 
+interface ChipType {
+  color: string;
+  denomination: number; // cents
+}
+
 interface Room {
   id: string;
   code: string;
@@ -54,6 +59,7 @@ interface Room {
   events: RoomEvent[];
   buyInRequests: BuyInRequest[];
   cashOutRequests: CashOutRequest[];
+  chipTypes: ChipType[];
 }
 
 interface PlayerStat {
@@ -388,15 +394,50 @@ export default function RoomDetailScreen({ route, navigation }: any) {
                 Your request will be sent to the host for approval.
               </Text>
             )}
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Amount ($)"
-              placeholderTextColor="#9ca3af"
-              value={amount}
-              onChangeText={setAmount}
-              keyboardType="decimal-pad"
-              autoFocus
-            />
+            {/* Part 3: $ prefix on amount input */}
+            <View style={styles.amountRow}>
+              <Text style={styles.currencyPrefix}>$</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="0.00"
+                placeholderTextColor="#9ca3af"
+                value={amount}
+                onChangeText={setAmount}
+                keyboardType="decimal-pad"
+                autoFocus
+              />
+            </View>
+
+            {/* Part 2: quick-add chip denomination buttons (cash-out only) */}
+            {activeModal === 'CASH_OUT' && room.chipTypes && room.chipTypes.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.chipButtonsScroll}
+                contentContainerStyle={styles.chipButtonsContent}
+              >
+                {[...room.chipTypes]
+                  .sort((a, b) => a.denomination - b.denomination)
+                  .map((chip) => {
+                    const dollars = chip.denomination / 100;
+                    const label = Number.isInteger(dollars)
+                      ? `+$${dollars}`
+                      : `+$${dollars.toFixed(2)}`;
+                    return (
+                      <TouchableOpacity
+                        key={chip.color}
+                        style={styles.chipButton}
+                        onPress={() => {
+                          const current = Math.max(0, parseFloat(amount) || 0);
+                          setAmount((current + dollars).toFixed(2));
+                        }}
+                      >
+                        <Text style={styles.chipButtonText}>{label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+              </ScrollView>
+            )}
             <TouchableOpacity
               style={[styles.modalButton, styles.modalButtonPrimary]}
               onPress={() => activeModal && handleSubmitEvent(activeModal)}
@@ -511,16 +552,44 @@ const styles = StyleSheet.create({
   modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '85%' },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#111827', marginBottom: 12, textAlign: 'center' },
   modalNote: { fontSize: 13, color: '#d97706', marginBottom: 12, textAlign: 'center' },
-  modalInput: {
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#f9fafb',
     borderWidth: 1,
     borderColor: '#d1d5db',
     borderRadius: 12,
+    marginBottom: 10,
+  },
+  currencyPrefix: {
+    paddingLeft: 16,
+    fontSize: 18,
+    color: '#9ca3af',
+  },
+  modalInput: {
+    flex: 1,
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     fontSize: 18,
     color: '#111827',
+  },
+  chipButtonsScroll: {
     marginBottom: 16,
+  },
+  chipButtonsContent: {
+    gap: 8,
+    paddingHorizontal: 2,
+  },
+  chipButton: {
+    backgroundColor: '#e5e7eb',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  chipButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
   },
   modalButton: { paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginBottom: 8 },
   modalButtonPrimary: { backgroundColor: '#3b82f6' },

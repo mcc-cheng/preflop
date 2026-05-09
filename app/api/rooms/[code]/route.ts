@@ -52,6 +52,9 @@ export async function GET(
           include: { user: { select: roomUserSelect } },
           orderBy: { createdAt: 'asc' },
         },
+        chipTypes: {
+          orderBy: { denomination: 'asc' },
+        },
       }
     })
 

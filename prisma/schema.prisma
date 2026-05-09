@@ -53,9 +53,18 @@ model Room {
   settlements      Settlement[]
   cashOutRequests  CashOutRequest[]
   buyInRequests    BuyInRequest[]
+  chipTypes        ChipType[]
 
   @@index([code])
   @@index([hostId])
+}
+
+model ChipType {
+  id           String @id @default(cuid())
+  roomId       String
+  room         Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  color        String
+  denomination Int    // cents
 }
 
 enum RoomRole {
