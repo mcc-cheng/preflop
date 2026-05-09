@@ -173,8 +173,9 @@ export default function HostDashboard({
                   </thead>
                   <tbody className="divide-y divide-slate-700">
                     {playerStats.map((stat) => {
-                      const hasCashedOut = stat.totalCashOut > 0
                       const isMe = stat.user.id === currentUserId
+                      const lastEvent = room.events?.find((e: any) => e.userId === stat.user.id)
+                      const hasCashedOut = lastEvent?.type === 'CASH_OUT'
                       return (
                         <tr key={stat.user.id} className={isMe ? 'bg-blue-900/10' : ''}>
                           <td className="py-3 pr-4">
@@ -195,9 +196,14 @@ export default function HostDashboard({
                           </td>
                           <td className="py-3 pl-4">
                             <div className="flex flex-col gap-1">
-                              {pendingBuyInRequests.some((r: any) => r.userId === stat.user.id) && (
-                                <span className="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded">Buy-in pending</span>
-                              )}
+                              {(() => {
+                                const pr = pendingBuyInRequests.find((r: any) => r.userId === stat.user.id)
+                                return pr ? (
+                                  <span className="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded">
+                                    {pr.type === 'BUY_IN' ? 'Buy-in' : 'Rebuy'} pending
+                                  </span>
+                                ) : null
+                              })()}
                               {stat.pendingRequest ? (
                                 <span className="text-xs bg-amber-800 text-amber-300 px-2 py-0.5 rounded">
                                   Cash-out pending ${centsToUSD(stat.pendingRequest.amountCents)}
@@ -265,28 +271,37 @@ export default function HostDashboard({
                     </h3>
                     <div className="space-y-3">
                       {pendingCashOutRequests.map((req: any) => (
-                        <div key={req.id} className="flex items-center justify-between bg-amber-900/30 border border-amber-800 rounded-lg px-4 py-3">
-                          <div>
-                            <span className="font-semibold text-white">{req.user.name}</span>
-                            <span className="text-amber-300 ml-3 font-mono font-bold">${centsToUSD(req.amountCents)}</span>
-                            <span className="text-slate-400 text-xs ml-3">{formatTimestamp(req.createdAt)}</span>
+                        <div key={req.id} className="bg-amber-900/30 border border-amber-800 rounded-lg px-4 py-3 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="font-semibold text-white">{req.user.name}</span>
+                              <span className="text-amber-300 ml-3 font-mono font-bold">${centsToUSD(req.amountCents)}</span>
+                              <span className="text-slate-400 text-xs ml-3">{formatTimestamp(req.createdAt)}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => onCashOutAction(req.id, 'approve')}
+                                disabled={requestActionLoading !== null}
+                                className="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm rounded-lg font-medium"
+                              >
+                                {requestActionLoading === req.id + 'approve' ? '…' : 'Approve'}
+                              </button>
+                              <button
+                                onClick={() => onCashOutAction(req.id, 'reject')}
+                                disabled={requestActionLoading !== null}
+                                className="px-3 py-1.5 bg-red-700 hover:bg-red-800 disabled:opacity-50 text-white text-sm rounded-lg font-medium"
+                              >
+                                {requestActionLoading === req.id + 'reject' ? '…' : 'Reject'}
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => onCashOutAction(req.id, 'approve')}
-                              disabled={requestActionLoading !== null}
-                              className="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-sm rounded-lg font-medium"
-                            >
-                              {requestActionLoading === req.id + 'approve' ? '…' : 'Approve'}
-                            </button>
-                            <button
-                              onClick={() => onCashOutAction(req.id, 'reject')}
-                              disabled={requestActionLoading !== null}
-                              className="px-3 py-1.5 bg-red-700 hover:bg-red-800 disabled:opacity-50 text-white text-sm rounded-lg font-medium"
-                            >
-                              {requestActionLoading === req.id + 'reject' ? '…' : 'Reject'}
-                            </button>
-                          </div>
+                          {req.imageData && (
+                            <img
+                              src={req.imageData}
+                              alt={`${req.user.name}'s chip stack`}
+                              className="w-full max-h-48 object-contain rounded-lg bg-slate-900"
+                            />
+                          )}
                         </div>
                       ))}
                     </div>

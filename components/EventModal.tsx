@@ -1,37 +1,68 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 interface Props {
   roomCode: string
   eventType: 'BUY_IN' | 'REBUY' | 'CASH_OUT'
   defaultAmount: number
+  isHost?: boolean
   onClose: () => void
   onSuccess: () => void
 }
 
-export default function EventModal({ roomCode, eventType, defaultAmount, onClose, onSuccess }: Props) {
+export default function EventModal({ roomCode, eventType, defaultAmount, isHost, onClose, onSuccess }: Props) {
   const [amount, setAmount] = useState(defaultAmount.toString())
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isCashOut = eventType === 'CASH_OUT'
+  // Non-host players must attach a chip stack photo when cashing out
+  const requiresImage = isCashOut && !isHost
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null
+    setImageFile(file)
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (ev) => setImagePreview(ev.target?.result as string)
+      reader.readAsDataURL(file)
+    } else {
+      setImagePreview('')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (requiresImage && !imageFile) {
+      setError('Please attach a photo of your chip stack before submitting.')
+      return
+    }
     setLoading(true)
     setError('')
 
-    const res = await fetch(`/api/rooms/${roomCode}/events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: eventType,
-        amount: parseFloat(amount)
+    let res: Response
+    if (isCashOut) {
+      const fd = new FormData()
+      fd.append('type', eventType)
+      fd.append('amount', amount)
+      if (imageFile) fd.append('image', imageFile)
+      res = await fetch(`/api/rooms/${roomCode}/events`, {
+        method: 'POST',
+        body: fd,
       })
-    })
+    } else {
+      res = await fetch(`/api/rooms/${roomCode}/events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: eventType, amount: parseFloat(amount) }),
+      })
+    }
 
-    // 202 = pending cash out request submitted
+    // 202 = pending request submitted
     if (res.ok || res.status === 202) {
       onSuccess()
     } else {
@@ -77,6 +108,39 @@ export default function EventModal({ roomCode, eventType, defaultAmount, onClose
             />
           </div>
 
+          {requiresImage && (
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Chip stack photo <span className="text-red-400">*</span>
+              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-2.5 border-2 border-dashed border-slate-500 hover:border-slate-400 rounded-lg text-slate-400 hover:text-slate-300 text-sm transition"
+              >
+                {imageFile ? imageFile.name : 'Tap to take / choose a photo'}
+              </button>
+              {imagePreview && (
+                <img
+                  src={imagePreview}
+                  alt="Chip stack preview"
+                  className="mt-2 w-full max-h-48 object-contain rounded-lg"
+                />
+              )}
+              {!imageFile && (
+                <p className="text-xs text-slate-500 mt-1">Required — hosts can see this photo</p>
+              )}
+            </div>
+          )}
+
           {error && (
             <div className="text-red-400 text-sm">{error}</div>
           )}
@@ -91,7 +155,7 @@ export default function EventModal({ roomCode, eventType, defaultAmount, onClose
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (requiresImage && !imageFile)}
               className={submitClassName}
             >
               {loading ? 'Submitting...' : submitLabel}

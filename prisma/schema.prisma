@@ -119,6 +119,7 @@ model CashOutRequest {
   status      CashOutStatus @default(PENDING)
   createdAt   DateTime      @default(now())
   resolvedAt  DateTime?
+  imageData   String?
 
   @@index([roomId, status])
   @@index([userId])

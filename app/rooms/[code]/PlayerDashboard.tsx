@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { centsToUSD, formatTimestamp } from '@/lib/utils'
 import type { RoomDashboardProps } from './types'
 
+type PlayerState = 'NEVER_BOUGHT_IN' | 'BUY_IN_PENDING' | 'ACTIVE' | 'REBUY_PENDING' | 'CASH_OUT_PENDING' | 'CASHED_OUT'
+
 export default function PlayerDashboard({
   room,
   code,
@@ -20,8 +22,23 @@ export default function PlayerDashboard({
 }: RoomDashboardProps) {
   const myStats = playerStats.find((p) => p.user.id === currentUserId)
   const myPendingCashOut = pendingCashOutRequests.find((r: any) => r.userId === currentUserId)
-  const myPendingBuyIn = pendingBuyInRequests.find((r: any) => r.userId === currentUserId)
+  const myPendingBuyIn = pendingBuyInRequests.find((r: any) => r.userId === currentUserId && r.type === 'BUY_IN')
+  const myPendingRebuy = pendingBuyInRequests.find((r: any) => r.userId === currentUserId && r.type === 'REBUY')
   const myEvents = room.events.filter((e: any) => e.userId === currentUserId)
+
+  // room.events is desc-ordered; myEvents[0] is the player's most recent approved event
+  const lastApprovedEvent = myEvents[0]
+  const hasEverBoughtIn = myEvents.some((e: any) => e.type === 'BUY_IN' || e.type === 'REBUY')
+  const playerState: PlayerState = (() => {
+    if (!hasEverBoughtIn && !myPendingBuyIn) return 'NEVER_BOUGHT_IN'
+    if (!hasEverBoughtIn) return 'BUY_IN_PENDING'
+    if (lastApprovedEvent?.type === 'CASH_OUT') {
+      return (myPendingBuyIn || myPendingRebuy) ? 'BUY_IN_PENDING' : 'CASHED_OUT'
+    }
+    if (myPendingRebuy) return 'REBUY_PENDING'
+    if (myPendingCashOut) return 'CASH_OUT_PENDING'
+    return 'ACTIVE'
+  })()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -69,11 +86,13 @@ export default function PlayerDashboard({
           </div>
         </div>
 
-        {/* Pending buy-in banner */}
-        {myPendingBuyIn && !room.endedAt && (
+        {/* Pending buy-in / rebuy banner */}
+        {(myPendingBuyIn || myPendingRebuy) && !room.endedAt && (
           <div className="bg-blue-950 border border-blue-600 rounded-xl px-5 py-4 mb-5 text-blue-300 text-sm">
-            Your {myPendingBuyIn.type === 'BUY_IN' ? 'buy-in' : 'rebuy'} request for{' '}
-            <span className="font-mono font-bold">${centsToUSD(myPendingBuyIn.amountCents)}</span>{' '}
+            Your {myPendingBuyIn ? 'buy-in' : 'rebuy'} request for{' '}
+            <span className="font-mono font-bold">
+              ${centsToUSD((myPendingBuyIn ?? myPendingRebuy)!.amountCents)}
+            </span>{' '}
             is waiting for host approval.
           </div>
         )}
@@ -90,33 +109,32 @@ export default function PlayerDashboard({
         {/* Action buttons */}
         {!room.endedAt && (
           <div className="flex gap-3 mb-5">
-            <button
-              onClick={() => {
-                if (myPendingBuyIn) { alert('Your buy-in request is already pending host approval.'); return }
-                onOpenEvent('BUY_IN')
-              }}
-              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm"
-            >
-              {myPendingBuyIn ? 'Pending…' : 'Buy In'}
-            </button>
-            <button
-              onClick={() => {
-                if (myPendingBuyIn) { alert('Your buy-in request is already pending host approval.'); return }
-                onOpenEvent('REBUY')
-              }}
-              className="flex-1 py-2.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium text-sm"
-            >
-              {myPendingBuyIn ? 'Pending…' : 'Rebuy'}
-            </button>
-            <button
-              onClick={() => {
-                if (myPendingCashOut) { alert('Your cash-out request is already pending host approval.'); return }
-                onOpenEvent('CASH_OUT')
-              }}
-              className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm"
-            >
-              {myPendingCashOut ? 'Pending…' : 'Cash Out'}
-            </button>
+            {(playerState === 'NEVER_BOUGHT_IN' || playerState === 'BUY_IN_PENDING' || playerState === 'CASHED_OUT') ? (
+              <button
+                onClick={() => { if (playerState !== 'BUY_IN_PENDING') onOpenEvent('BUY_IN') }}
+                disabled={playerState === 'BUY_IN_PENDING'}
+                className={`flex-1 py-2.5 rounded-lg font-medium text-sm text-white ${playerState === 'BUY_IN_PENDING' ? 'bg-blue-800 opacity-60' : 'bg-blue-600 hover:bg-blue-700'}`}
+              >
+                {playerState === 'BUY_IN_PENDING' ? 'Buy-in Pending…' : 'Buy In'}
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => { if (playerState !== 'REBUY_PENDING') onOpenEvent('REBUY') }}
+                  disabled={playerState === 'REBUY_PENDING'}
+                  className={`flex-1 py-2.5 rounded-lg font-medium text-sm text-white ${playerState === 'REBUY_PENDING' ? 'bg-yellow-800 opacity-60' : 'bg-yellow-600 hover:bg-yellow-700'}`}
+                >
+                  {playerState === 'REBUY_PENDING' ? 'Rebuy Pending…' : 'Rebuy'}
+                </button>
+                <button
+                  onClick={() => { if (playerState !== 'CASH_OUT_PENDING') onOpenEvent('CASH_OUT') }}
+                  disabled={playerState === 'CASH_OUT_PENDING'}
+                  className={`flex-1 py-2.5 rounded-lg font-medium text-sm text-white ${playerState === 'CASH_OUT_PENDING' ? 'bg-green-800 opacity-60' : 'bg-green-600 hover:bg-green-700'}`}
+                >
+                  {playerState === 'CASH_OUT_PENDING' ? 'Cash-out Pending…' : 'Cash Out'}
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -141,7 +159,9 @@ export default function PlayerDashboard({
           <div className="space-y-2">
             {playerStats.map((stat) => {
               const isMe = stat.user.id === currentUserId
-              const hasCashedOut = stat.totalCashOut > 0
+              // events are desc-ordered; first match is the player's most recent action
+              const lastEvent = room.events?.find((e: any) => e.userId === stat.user.id)
+              const hasCashedOut = lastEvent?.type === 'CASH_OUT'
               return (
                 <div
                   key={stat.user.id}
@@ -160,9 +180,14 @@ export default function PlayerDashboard({
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {pendingBuyInRequests.some((r: any) => r.userId === stat.user.id) && (
-                      <span className="text-xs text-blue-400">buy-in pending</span>
-                    )}
+                    {(() => {
+                      const pr = pendingBuyInRequests.find((r: any) => r.userId === stat.user.id)
+                      return pr ? (
+                        <span className="text-xs text-blue-400">
+                          {pr.type === 'BUY_IN' ? 'buy-in' : 'rebuy'} pending
+                        </span>
+                      ) : null
+                    })()}
                     {stat.pendingRequest && (
                       <span className="text-xs text-amber-400">cash-out pending</span>
                     )}
