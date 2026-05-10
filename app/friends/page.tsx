@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { PageShell, BackLink, Card, InlineError, EmptyState, ListItemCard, Avatar } from '@/components/ui'
 
 export default function FriendsPage() {
-  const router = useRouter()
   const [friends, setFriends] = useState<any[]>([])
   const [pendingRequests, setPendingRequests] = useState<any[]>([])
   const [searchUsername, setSearchUsername] = useState('')
@@ -55,7 +54,7 @@ export default function FriendsPage() {
     const res = await fetch('/api/friends/requests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ receiverId })
+      body: JSON.stringify({ receiverId }),
     })
 
     if (res.ok) {
@@ -67,7 +66,7 @@ export default function FriendsPage() {
     const res = await fetch(`/api/friends/requests/${requestId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action })
+      body: JSON.stringify({ action }),
     })
 
     if (res.ok) {
@@ -83,125 +82,123 @@ export default function FriendsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        <Link href="/rooms" className="text-blue-400 hover:text-blue-300 mb-4 inline-block">
-          ← Back to rooms
-        </Link>
+    <PageShell>
+      <BackLink href="/rooms" label="Back to rooms" />
 
-        <h1 className="text-3xl font-bold text-white mb-8">Friends</h1>
+      <h1 className="text-3xl font-bold text-on-surface mb-8">Friends</h1>
 
-        {/* Search Section */}
-        <div className="bg-slate-800 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-white mb-4">Add Friends</h2>
-          <form onSubmit={handleSearch} className="flex gap-3">
-            <input
-              type="text"
-              value={searchUsername}
-              onChange={(e) => setSearchUsername(e.target.value)}
-              placeholder="Search by username..."
-              className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg font-semibold"
-            >
-              {loading ? 'Searching...' : 'Search'}
-            </button>
-          </form>
+      {/* Search Section */}
+      <Card className="mb-6">
+        <h2 className="text-xl font-bold text-on-surface mb-4">Add Friends</h2>
+        <form onSubmit={handleSearch} className="flex gap-3">
+          <input
+            type="text"
+            value={searchUsername}
+            onChange={(e) => setSearchUsername(e.target.value)}
+            placeholder="Search by username..."
+            className="flex-1 px-4 py-2 bg-surface border border-outline text-on-surface rounded-xl focus:outline-none focus:border-chip-green/35 transition-colors duration-150 placeholder:text-on-surface-variant"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-6 py-2 border border-chip-green/35 chip-text-green hover:bg-chip-green-dim disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-medium transition-all duration-200"
+          >
+            {loading ? 'Searching...' : 'Search'}
+          </button>
+        </form>
 
-          {error && <div className="mt-4 text-red-400">{error}</div>}
+        {error && <div className="mt-4"><InlineError message={error} /></div>}
 
-          {searchResult && (
-            <div className="mt-4 p-4 bg-slate-700 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-white font-semibold">{searchResult.user.name}</div>
-                  <div className="text-slate-400 text-sm">@{searchResult.user.username}</div>
-                  <div className="text-slate-400 text-xs mt-1">{formatStats(searchResult.user.stats)}</div>
-                </div>
-                <div>
-                  {searchResult.isFriend ? (
-                    <span className="px-4 py-2 bg-green-600 text-white rounded-lg">Friends ✓</span>
-                  ) : searchResult.hasPendingRequest ? (
-                    <span className="px-4 py-2 bg-yellow-600 text-white rounded-lg">
-                      {searchResult.requestSentByMe ? 'Request Sent' : 'Request Received'}
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => handleSendRequest(searchResult.user.id)}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                    >
-                      Add Friend
-                    </button>
-                  )}
-                </div>
+        {searchResult && (
+          <div className="mt-4 p-4 glass-card chip-border-white rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-on-surface font-semibold">{searchResult.user.name}</div>
+                <div className="text-on-surface-variant text-sm">@{searchResult.user.username}</div>
+                <div className="text-on-surface-variant text-xs mt-1">{formatStats(searchResult.user.stats)}</div>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Pending Requests */}
-        {pendingRequests.length > 0 && (
-          <div className="bg-slate-800 rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-white mb-4">Friend Requests ({pendingRequests.length})</h2>
-            <div className="space-y-3">
-              {pendingRequests.map((request: any) => (
-                <div key={request.id} className="flex items-center justify-between p-4 bg-slate-700 rounded-lg">
-                  <div>
-                    <div className="text-white font-semibold">{request.sender.name}</div>
-                    <div className="text-slate-400 text-sm">@{request.sender.username}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleRespondToRequest(request.id, 'accept')}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
-                    >
-                      Accept
-                    </button>
-                    <button
-                      onClick={() => handleRespondToRequest(request.id, 'decline')}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
-                    >
-                      Decline
-                    </button>
-                  </div>
-                </div>
-              ))}
+              <div>
+                {searchResult.isFriend ? (
+                  <span className="px-4 py-2 border border-chip-green/35 chip-text-green rounded-xl text-sm font-medium">
+                    Friends ✓
+                  </span>
+                ) : searchResult.hasPendingRequest ? (
+                  <span className="px-4 py-2 border border-warning/35 text-warning rounded-xl text-sm font-medium">
+                    {searchResult.requestSentByMe ? 'Request Sent' : 'Request Received'}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleSendRequest(searchResult.user.id)}
+                    className="px-4 py-2 border border-chip-green/35 chip-text-green hover:bg-chip-green-dim rounded-xl text-sm font-medium transition-all duration-200"
+                  >
+                    Add Friend
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
+      </Card>
 
-        {/* Friends List */}
-        <div className="bg-slate-800 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-white mb-4">My Friends ({friends.length})</h2>
-          {friends.length === 0 ? (
-            <div className="text-slate-400 text-center py-8">No friends yet. Search to add some!</div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {friends.map((friend: any) => (
-                <Link
-                  key={friend.id}
-                  href={`/profile/${friend.username}`}
-                  className="p-4 bg-slate-700 hover:bg-slate-600 rounded-lg transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center text-white font-bold">
-                      {friend.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-white font-semibold">{friend.name}</div>
-                      <div className="text-slate-400 text-sm">@{friend.username}</div>
-                      <div className="text-slate-500 text-xs mt-1">{formatStats(friend.stats)}</div>
-                    </div>
+      {/* Pending Requests */}
+      {pendingRequests.length > 0 && (
+        <Card className="mb-6">
+          <h2 className="text-xl font-bold text-on-surface mb-4">
+            Friend Requests ({pendingRequests.length})
+          </h2>
+          <div className="space-y-3">
+            {pendingRequests.map((request: any) => (
+              <div key={request.id} className="glass-card chip-border-purple chip-glow-purple p-4 flex items-center justify-between">
+                <div>
+                  <div className="text-on-surface font-semibold">{request.sender.name}</div>
+                  <div className="text-on-surface-variant text-sm">@{request.sender.username}</div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleRespondToRequest(request.id, 'accept')}
+                    className="px-4 py-2 border border-chip-green/35 chip-text-green hover:bg-chip-green-dim rounded-xl text-sm font-medium transition-all duration-200"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => handleRespondToRequest(request.id, 'decline')}
+                    className="px-4 py-2 text-on-surface-variant hover:text-chip-red-text rounded-xl text-sm font-medium transition-colors duration-200"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Friends List */}
+      <Card>
+        <h2 className="text-xl font-bold text-on-surface mb-4">My Friends ({friends.length})</h2>
+        {friends.length === 0 ? (
+          <EmptyState message="No friends yet. Search to add some!" />
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {friends.map((friend: any) => (
+              <Link
+                key={friend.id}
+                href={`/profile/${friend.username}`}
+                className="p-4 glass-card chip-border-white hover:bg-chip-green-dim hover:chip-glow-green rounded-xl transition-all duration-200"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar name={friend.name} size="lg" />
+                  <div className="flex-1">
+                    <div className="text-on-surface font-semibold">{friend.name}</div>
+                    <div className="text-on-surface-variant text-sm">@{friend.username}</div>
+                    <div className="chip-text-green text-xs mt-1">{formatStats(friend.stats)}</div>
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </Card>
+    </PageShell>
   )
 }

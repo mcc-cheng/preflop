@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { roomUserSelect } from '@/lib/api'
 import Link from 'next/link'
 import LogoutButton from '@/components/LogoutButton'
+import { PageShell, StatusBadge } from '@/components/ui'
 
 function hasMultipleBuyers(events: { type: string; userId: string }[]) {
   const buyerIds = new Set(
@@ -61,8 +62,8 @@ export default async function RoomsPage({
     : rooms
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
+    <PageShell>
+      <div>
         <div className="flex flex-col gap-6 mb-8 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">
@@ -142,15 +143,10 @@ export default async function RoomsPage({
                 >
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="text-xl font-bold text-white">{settings.name}</h3>
-                    {room.endedAt ? (
-                      <span className="px-2 py-1 bg-slate-600 text-slate-300 text-xs rounded">
-                        SETTLED
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-green-600 text-white text-xs rounded">
-                        ACTIVE
-                      </span>
-                    )}
+                    {room.endedAt
+                      ? <StatusBadge label="SETTLED" color="slate" />
+                      : <StatusBadge label="ACTIVE" color="green" />
+                    }
                   </div>
 
                   <div className="space-y-2 text-sm text-slate-400">
@@ -168,6 +164,6 @@ export default async function RoomsPage({
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   )
 }

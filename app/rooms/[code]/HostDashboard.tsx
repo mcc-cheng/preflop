@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { centsToUSD, formatTimestamp } from '@/lib/utils'
 import type { RoomDashboardProps } from './types'
+import { BackLink, EmptyState } from '@/components/ui'
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000)
@@ -52,9 +52,7 @@ export default function HostDashboard({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <Link href="/rooms" className="text-blue-400 hover:text-blue-300 mb-4 inline-block">
-          ← Back to rooms
-        </Link>
+        <BackLink href="/rooms" label="Back to rooms" />
 
         {/* Header */}
         <div className="bg-slate-800 rounded-xl p-6 mb-6">
@@ -343,11 +341,7 @@ export default function HostDashboard({
                   </div>
                 )}
 
-                {totalPending === 0 && (
-                  <div className="text-slate-400 text-sm text-center py-12">
-                    No pending requests
-                  </div>
-                )}
+                {totalPending === 0 && <EmptyState message="No pending requests" />}
               </div>
             )}
 
@@ -355,7 +349,7 @@ export default function HostDashboard({
             {activeTab === 'Audit Log' && (
               <div className="space-y-2 max-h-[520px] overflow-y-auto">
                 {room.events.length === 0 ? (
-                  <div className="text-slate-400 text-center py-12">No events yet</div>
+                  <EmptyState message="No events yet" />
                 ) : (
                   [...room.events].reverse().map((event: any) => (
                     <div key={event.id} className="flex justify-between items-center bg-slate-700 rounded-lg px-4 py-2.5 text-sm">

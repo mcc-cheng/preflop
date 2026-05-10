@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { centsToUSD, formatTimestamp } from '@/lib/utils'
 import type { RoomDashboardProps } from './types'
+import { BackLink } from '@/components/ui'
 
 type PlayerState = 'NEVER_BOUGHT_IN' | 'BUY_IN_PENDING' | 'ACTIVE' | 'REBUY_PENDING' | 'CASH_OUT_PENDING' | 'CASHED_OUT'
 
@@ -61,9 +61,7 @@ export default function PlayerDashboard({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="container mx-auto px-4 py-8 max-w-xl">
-        <Link href="/rooms" className="text-blue-400 hover:text-blue-300 mb-4 inline-block">
-          ← Back to rooms
-        </Link>
+        <BackLink href="/rooms" label="Back to rooms" />
 
         {/* Room info */}
         <div className="bg-slate-800 rounded-xl p-6 mb-5">

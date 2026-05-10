@@ -1,8 +1,8 @@
 import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import SettingsClient from '@/components/SettingsClient'
+import { PageShell, BackLink } from '@/components/ui'
 
 export default async function SettingsPage() {
   const user = await requireAuth()
@@ -25,16 +25,12 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        <Link href="/rooms" className="text-blue-400 hover:text-blue-300 mb-4 inline-block">
-          ← Back to rooms
-        </Link>
+    <PageShell>
+      <BackLink href="/rooms" label="Back to rooms" />
 
-        <h1 className="text-3xl font-bold text-white mb-8">Account Settings</h1>
+      <h1 className="text-3xl font-bold text-white mb-8">Account Settings</h1>
 
-        <SettingsClient profile={profile} />
-      </div>
-    </div>
+      <SettingsClient profile={profile} />
+    </PageShell>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { ModalShell, CurrencyInput, InlineError, SecondaryButton } from '@/components/ui'
 
 interface ChipType {
   color: string
@@ -165,8 +166,7 @@ export default function EventModal({
   }[eventType]
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full">
+    <ModalShell onClose={onClose}>
         <h2 className="text-2xl font-bold text-white mb-4">{title}</h2>
 
         {isCashOut && (
@@ -177,26 +177,18 @@ export default function EventModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
 
-          {/* ── Part 3: $ prefix on amount input ── */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
               Amount (USD)
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none select-none">
-                $
-              </span>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-7 pr-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                step="0.01"
-                min="0.01"
-                required
-                autoFocus
-              />
-            </div>
+            <CurrencyInput
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              step="0.01"
+              min="0.01"
+              required
+              autoFocus
+            />
 
             {/* ── Part 2: quick-add denomination buttons (cash-out only) ── */}
             {sortedChips.length > 0 && (
@@ -269,16 +261,12 @@ export default function EventModal({
             </div>
           )}
 
-          {error && <div className="text-red-400 text-sm">{error}</div>}
+          <InlineError message={error} />
 
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
-            >
+            <SecondaryButton type="button" onClick={onClose} className="flex-1 py-2">
               Cancel
-            </button>
+            </SecondaryButton>
             <button
               type="submit"
               disabled={loading || (requiresImage && !imageFile)}
@@ -288,7 +276,6 @@ export default function EventModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalShell>
   )
 }
