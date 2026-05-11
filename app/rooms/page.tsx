@@ -2,7 +2,6 @@ import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { roomUserSelect } from '@/lib/api'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import LogoutButton from '@/components/LogoutButton'
 import { PageShell, StatusBadge } from '@/components/ui'
 
@@ -21,8 +20,7 @@ export default async function RoomsPage({
 }: {
   searchParams?: Promise<{ history?: string }>
 }) {
-  let user: { id: string; email: string; name: string }
-  try { user = await requireAuth() } catch { redirect('/login') }
+  const user = await requireAuth()
   const params = await searchParams
   const showingHistory = params?.history === 'true'
 

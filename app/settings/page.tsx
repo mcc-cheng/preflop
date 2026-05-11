@@ -9,8 +9,7 @@ export default async function SettingsPage({
 }: {
   searchParams?: Promise<{ tab?: string }>
 }) {
-  let user: { id: string; email: string; name: string }
-  try { user = await requireAuth() } catch { redirect('/login') }
+  const user = await requireAuth()
   const params = await searchParams
   const initialTab = params?.tab ?? ''
 
