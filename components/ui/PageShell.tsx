@@ -5,7 +5,7 @@ interface PageShellProps {
 
 export function PageShell({ children, variant = 'container' }: PageShellProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {variant === 'centered' ? (
         <div className="flex items-center justify-center min-h-screen px-4 pb-24">
           {children}

@@ -45,7 +45,7 @@ export default async function RootLayout({
       <body>
         <Providers>
           <TopBar />
-          <main className="pt-14">
+          <main>
             {children}
           </main>
         </Providers>
