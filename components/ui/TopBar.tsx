@@ -118,7 +118,7 @@ export function TopBar() {
       {menuOpen && session && !hideNav && (
         <nav
           id="mobile-nav"
-          className="md:hidden fixed top-14 left-0 right-0 z-39 border-b border-chip-white/10 px-4 py-3 space-y-1"
+          className="md:hidden fixed top-14 left-0 right-0 z-[39] border-b border-chip-white/10 px-4 py-3 space-y-1"
           style={{ background: 'var(--nav-bg)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
           aria-label="Mobile navigation"
         >
