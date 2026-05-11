@@ -10,17 +10,20 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:backfill-usernames": "tsx scripts/backfill-usernames.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
     "bcryptjs": "^2.4.3",
     "jsqr": "^1.4.0",
+    "libphonenumber-js": "^1.13.0",
     "next": "^16.2.4",
     "next-auth": "^4.24.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-qr-code": "^2.0.21",
+    "recharts": "^3.8.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {

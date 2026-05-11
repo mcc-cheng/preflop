@@ -243,7 +243,8 @@ function LoginContent() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                     className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="lowercase, numbers, underscores"
+                    placeholder="starts with a letter, a–z, 0–9, _"
+                    pattern="^[a-z][a-z0-9_]{2,19}$"
                     minLength={3}
                     maxLength={20}
                     required
@@ -256,7 +257,7 @@ function LoginContent() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="+1 555 000 0000"
+                    placeholder="+1 555 123 4567"
                     required
                   />
                 </FormField>

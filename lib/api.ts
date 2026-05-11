@@ -47,10 +47,10 @@ export const roomCodeSchema = z
 export const usernameSchema = z
   .string()
   .trim()
-  .toLowerCase()
-  .min(3)
-  .max(20)
-  .regex(/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores')
+  .regex(
+    /^[a-z][a-z0-9_]{2,19}$/,
+    'Username must be 3–20 characters, start with a letter, and contain only lowercase letters, numbers, and underscores',
+  )
 
 export const nameSchema = z.string().trim().min(1).max(80)
 export const phoneSchema = z.string().trim().max(32).optional().or(z.literal(''))
