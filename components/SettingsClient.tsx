@@ -10,6 +10,8 @@ import {
   ListItemCard,
   StatusBadge,
   PaymentMethodForm,
+  PrimaryButton,
+  SecondaryButton,
   PAYMENT_TYPES,
 } from '@/components/ui'
 
@@ -94,43 +96,35 @@ export default function SettingsClient({ profile }: { profile: any }) {
     <div className="space-y-8">
       {/* Profile Section */}
       <Card>
-        <h2 className="text-xl font-bold text-white mb-6">Profile Information</h2>
+        <h2 className="text-xl font-bold text-on-surface mb-6">Profile Information</h2>
 
         <div className="flex items-start gap-6 mb-6">
-          <div className="relative">
-            <Avatar name={profile.name} size="xl" />
-            <button className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full text-xs">
-              📷
-            </button>
-          </div>
+          <Avatar name={profile.name} size="xl" />
 
           <div className="flex-1">
             {!editing ? (
               <div className="space-y-3">
                 <div>
-                  <div className="text-slate-400 text-sm">Name</div>
-                  <div className="text-white font-semibold">{profile.name}</div>
+                  <div className="text-on-surface-variant text-xs uppercase tracking-wider font-medium">Name</div>
+                  <div className="text-on-surface font-semibold mt-0.5">{profile.name}</div>
                 </div>
                 <div>
-                  <div className="text-slate-400 text-sm">Username</div>
-                  <div className="text-white font-mono">@{profile.username}</div>
+                  <div className="text-on-surface-variant text-xs uppercase tracking-wider font-medium">Username</div>
+                  <div className="text-on-surface font-mono mt-0.5">@{profile.username}</div>
                 </div>
                 <div>
-                  <div className="text-slate-400 text-sm">Email</div>
-                  <div className="text-white">{profile.email}</div>
+                  <div className="text-on-surface-variant text-xs uppercase tracking-wider font-medium">Email</div>
+                  <div className="text-on-surface mt-0.5">{profile.email}</div>
                 </div>
                 {profile.phone && (
                   <div>
-                    <div className="text-slate-400 text-sm">Phone</div>
-                    <div className="text-white">{profile.phone}</div>
+                    <div className="text-on-surface-variant text-xs uppercase tracking-wider font-medium">Phone</div>
+                    <div className="text-on-surface mt-0.5">{profile.phone}</div>
                   </div>
                 )}
-                <button
-                  onClick={() => setEditing(true)}
-                  className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                >
+                <SecondaryButton onClick={() => setEditing(true)} className="mt-2">
                   Edit Profile
-                </button>
+                </SecondaryButton>
               </div>
             ) : (
               <div className="space-y-4">
@@ -139,7 +133,7 @@ export default function SettingsClient({ profile }: { profile: any }) {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-field"
                   />
                 </FormField>
                 <FormField label="Username">
@@ -147,7 +141,7 @@ export default function SettingsClient({ profile }: { profile: any }) {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-field"
                   />
                 </FormField>
                 <FormField label="Phone (optional)">
@@ -155,29 +149,24 @@ export default function SettingsClient({ profile }: { profile: any }) {
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-field"
                   />
                 </FormField>
                 <InlineError message={error} />
                 <div className="flex gap-3">
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={loading}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg"
-                  >
-                    {loading ? 'Saving...' : 'Save Changes'}
-                  </button>
-                  <button
+                  <PrimaryButton onClick={handleSaveProfile} loading={loading} loadingText="Saving..." fullWidth={false} className="px-5">
+                    Save Changes
+                  </PrimaryButton>
+                  <SecondaryButton
                     onClick={() => {
                       setEditing(false)
                       setName(profile.name)
                       setUsername(profile.username)
                       setPhone(profile.phone || '')
                     }}
-                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
                   >
                     Cancel
-                  </button>
+                  </SecondaryButton>
                 </div>
               </div>
             )}
@@ -190,18 +179,15 @@ export default function SettingsClient({ profile }: { profile: any }) {
         <SectionHeader
           title="Payment Methods"
           action={
-            <button
-              onClick={() => setShowAddPayment(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-            >
-              + Add Payment Method
-            </button>
+            <SecondaryButton onClick={() => setShowAddPayment(true)}>
+              + Add
+            </SecondaryButton>
           }
         />
 
         {showAddPayment && (
-          <div className="mb-6 p-4 bg-slate-700 rounded-lg">
-            <h3 className="text-white font-semibold mb-4">Add Payment Method</h3>
+          <div className="mb-6 p-4 bg-surface-raised border border-outline rounded-xl">
+            <h3 className="text-on-surface font-semibold mb-4">Add Payment Method</h3>
             <PaymentMethodForm
               paymentType={paymentType}
               identifier={paymentIdentifier}
@@ -219,16 +205,16 @@ export default function SettingsClient({ profile }: { profile: any }) {
 
         <div className="space-y-3">
           {profile.paymentMethods.length === 0 ? (
-            <div className="text-slate-400 text-center py-8">No payment methods added yet</div>
+            <div className="text-on-surface-variant text-center py-8 text-sm">No payment methods added yet</div>
           ) : (
             profile.paymentMethods.map((method: any) => (
               <ListItemCard key={method.id}>
                 <div>
-                  <div className="text-white font-semibold flex items-center gap-2">
+                  <div className="text-on-surface font-semibold flex items-center gap-2">
                     {PAYMENT_TYPES.find(t => t.value === method.type)?.label ?? method.type}
                     {method.isDefault && <StatusBadge label="DEFAULT" color="green" />}
                   </div>
-                  <div className="text-slate-400 text-sm">
+                  <div className="text-on-surface-variant text-sm">
                     {method.nickname || method.identifier}
                   </div>
                 </div>
@@ -236,14 +222,14 @@ export default function SettingsClient({ profile }: { profile: any }) {
                   {!method.isDefault && (
                     <button
                       onClick={() => handleSetDefault(method.id)}
-                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded"
+                      className="px-3 py-1.5 text-xs rounded-lg border border-outline text-on-surface-variant hover:text-on-surface hover:border-chip-white/25 transition-colors duration-150"
                     >
                       Set Default
                     </button>
                   )}
                   <button
                     onClick={() => handleDeletePayment(method.id)}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded"
+                    className="px-3 py-1.5 text-xs rounded-lg border border-chip-red/35 chip-text-red hover:bg-chip-red-dim transition-colors duration-150"
                   >
                     Delete
                   </button>

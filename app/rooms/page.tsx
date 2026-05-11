@@ -66,33 +66,21 @@ export default async function RoomsPage({
       <div>
         <div className="flex flex-col gap-6 mb-8 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">
+            <h1 className="text-3xl font-bold text-on-surface">
               {showingHistory ? 'Past Games' : 'My Rooms'}
             </h1>
-            <p className="text-slate-400 mt-1">Welcome, {user.name}</p>
+            <p className="text-on-surface-variant mt-1">Welcome, {user.name}</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/friends"
-              className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition"
-            >
-              👥 Friends
-            </Link>
-            <Link
-              href="/settings"
-              className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition"
-            >
-              ⚙️ Settings
-            </Link>
+          <div className="flex flex-wrap gap-2">
             <Link
               href="/rooms/new"
-              className="px-6 py-2 text-white rounded-lg font-semibold transition bg-blue-600 hover:bg-blue-700"
+              className="px-5 py-2 bg-primary text-on-primary rounded-xl font-semibold text-sm hover:opacity-90 active:scale-95 transition-all duration-150"
             >
               Create Room
             </Link>
             <Link
               href="/rooms/join"
-              className="px-6 py-2 rounded-lg font-semibold transition bg-slate-700 hover:bg-slate-600 text-white"
+              className="px-5 py-2 bg-surface-raised border border-outline text-on-surface rounded-xl font-semibold text-sm hover:bg-outline transition-all duration-150"
             >
               Join Room
             </Link>
@@ -100,19 +88,19 @@ export default async function RoomsPage({
           </div>
         </div>
 
-        <div className="mb-6 flex rounded-lg bg-slate-800 p-1">
+        <div className="mb-6 flex rounded-xl bg-surface-raised p-1">
           <Link
             href="/rooms"
-            className={`flex-1 rounded-md px-4 py-2 text-center text-sm font-semibold transition ${
-              !showingHistory ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
+            className={`flex-1 rounded-lg px-4 py-2 text-center text-sm font-medium transition-all duration-150 ${
+              !showingHistory ? 'bg-surface text-on-surface' : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             Active Rooms
           </Link>
           <Link
             href="/rooms?history=true"
-            className={`flex-1 rounded-md px-4 py-2 text-center text-sm font-semibold transition ${
-              showingHistory ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
+            className={`flex-1 rounded-lg px-4 py-2 text-center text-sm font-medium transition-all duration-150 ${
+              showingHistory ? 'bg-surface text-on-surface' : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             Past Games
@@ -121,17 +109,17 @@ export default async function RoomsPage({
 
         {visibleRooms.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-slate-400 text-lg mb-4">
+            <p className="text-on-surface-variant text-lg mb-2">
               {showingHistory ? 'No past games yet' : 'No active rooms'}
             </p>
-            <p className="text-slate-500">
+            <p className="text-on-surface-variant/60 text-sm">
               {showingHistory
                 ? 'Settled games appear here once more than one player has bought in.'
                 : 'Create a new room or join an existing one.'}
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {visibleRooms.map((room) => {
               const settings = room.settings as any
               const href = room.endedAt ? `/rooms/${room.id}` : `/rooms/${room.code}`
@@ -139,19 +127,19 @@ export default async function RoomsPage({
                 <Link
                   key={room.id}
                   href={href}
-                  className="bg-slate-800 hover:bg-slate-750 rounded-lg p-6 transition"
+                  className="bg-surface border border-outline hover:border-chip-white/20 rounded-2xl p-5 transition-all duration-150 hover:bg-surface-raised group"
                 >
                   <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-xl font-bold text-white">{settings.name}</h3>
+                    <h3 className="text-base font-bold text-on-surface group-hover:chip-text-white">{settings.name}</h3>
                     {room.endedAt
                       ? <StatusBadge label="SETTLED" color="slate" />
                       : <StatusBadge label="ACTIVE" color="green" />
                     }
                   </div>
 
-                  <div className="space-y-2 text-sm text-slate-400">
+                  <div className="space-y-1.5 text-sm text-on-surface-variant">
                     {!room.endedAt && (
-                      <div>Code: <span className="font-mono text-white">{room.code}</span></div>
+                      <div>Code: <span className="font-mono text-on-surface">{room.code}</span></div>
                     )}
                     <div>Host: {room.host.name}</div>
                     <div>Players: {room._count.members}</div>

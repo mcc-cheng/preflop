@@ -28,7 +28,7 @@ function QRCode({ value, size = 128, label }: QRCodeProps) {
   if (!safeValue) {
     return (
       <div
-        className="flex items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-center text-sm text-slate-400"
+        className="flex items-center justify-center rounded-xl border border-outline bg-surface text-center text-sm text-on-surface-variant"
         style={wrapperStyle}
         role="status"
       >

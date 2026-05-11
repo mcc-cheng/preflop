@@ -32,7 +32,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <PageShell variant="centered">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-on-surface-variant text-sm">Loading…</div>
       </PageShell>
     )
   }
@@ -41,8 +41,8 @@ export default function ProfilePage() {
     return (
       <PageShell variant="centered">
         <div className="text-center">
-          <div className="text-red-400 text-xl mb-4">{error}</div>
-          <Link href="/friends" className="text-blue-400 hover:text-blue-300">
+          <div className="chip-text-red text-lg mb-4">{error}</div>
+          <Link href="/friends" className="text-on-surface-variant hover:text-on-surface transition-colors duration-150">
             ← Back to friends
           </Link>
         </div>
@@ -60,45 +60,43 @@ export default function ProfilePage() {
       <BackLink href="/friends" label="Back to friends" />
 
       <div className="max-w-2xl mx-auto">
-        {/* Profile Header */}
-        <div className="bg-slate-800 rounded-lg p-8 mb-6">
-          <div className="flex items-center gap-6">
+        <div className="bg-surface border border-outline rounded-2xl p-6 mb-5">
+          <div className="flex items-center gap-5">
             <Avatar name={user.name} size="xl" />
             <div>
-              <h1 className="text-3xl font-bold text-white">{user.name}</h1>
-              <div className="text-slate-400 text-lg">@{user.username}</div>
-              <div className="text-slate-500 text-sm mt-1">
+              <h1 className="text-2xl font-bold text-on-surface">{user.name}</h1>
+              <div className="text-on-surface-variant">@{user.username}</div>
+              <div className="text-on-surface-variant/60 text-sm mt-0.5">
                 Member since {new Date(user.createdAt).toLocaleDateString()}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Statistics */}
-        <div className="bg-slate-800 rounded-lg p-8">
-          <h2 className="text-2xl font-bold text-white mb-6">Statistics</h2>
+        <div className="bg-surface border border-outline rounded-2xl p-6">
+          <h2 className="text-lg font-bold text-on-surface mb-5">Statistics</h2>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="bg-slate-700 rounded-lg p-6">
-              <div className="text-slate-400 text-sm mb-2">Games Played</div>
-              <div className="text-3xl font-bold text-white">{stats.gamesPlayed || 0}</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-surface-raised border border-outline rounded-xl p-5">
+              <div className="text-on-surface-variant text-xs uppercase tracking-wide mb-1">Games Played</div>
+              <div className="text-2xl font-bold text-on-surface">{stats.gamesPlayed || 0}</div>
             </div>
 
-            <div className="bg-slate-700 rounded-lg p-6">
-              <div className="text-slate-400 text-sm mb-2">Hours Played</div>
-              <div className="text-3xl font-bold text-white">{(stats.hoursPlayed || 0).toFixed(1)}h</div>
+            <div className="bg-surface-raised border border-outline rounded-xl p-5">
+              <div className="text-on-surface-variant text-xs uppercase tracking-wide mb-1">Hours Played</div>
+              <div className="text-2xl font-bold text-on-surface">{(stats.hoursPlayed || 0).toFixed(1)}h</div>
             </div>
 
-            <div className="bg-slate-700 rounded-lg p-6">
-              <div className="text-slate-400 text-sm mb-2">Total Winnings</div>
-              <div className={`text-3xl font-bold ${stats.totalWinnings >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <div className="bg-surface-raised border border-outline rounded-xl p-5">
+              <div className="text-on-surface-variant text-xs uppercase tracking-wide mb-1">Total Winnings</div>
+              <div className={`text-2xl font-bold ${stats.totalWinnings >= 0 ? 'chip-text-green' : 'chip-text-red'}`}>
                 {stats.totalWinnings >= 0 ? '+' : ''}${centsToUSD(stats.totalWinnings || 0)}
               </div>
             </div>
 
-            <div className="bg-slate-700 rounded-lg p-6">
-              <div className="text-slate-400 text-sm mb-2">Hourly Rate</div>
-              <div className={`text-3xl font-bold ${parseFloat(hourlyRate) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <div className="bg-surface-raised border border-outline rounded-xl p-5">
+              <div className="text-on-surface-variant text-xs uppercase tracking-wide mb-1">Hourly Rate</div>
+              <div className={`text-2xl font-bold ${parseFloat(hourlyRate) >= 0 ? 'chip-text-green' : 'chip-text-red'}`}>
                 ${hourlyRate}/hr
               </div>
             </div>

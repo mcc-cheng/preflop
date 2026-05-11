@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { centsToUSD } from '@/lib/utils'
+import { ModalShell, SecondaryButton } from '@/components/ui'
 
 interface Props {
   roomCode: string
@@ -18,76 +19,57 @@ export default function SettlementView({ roomCode, onClose }: Props) {
         if (!res.ok) throw new Error('Failed to fetch settlement')
         return res.json()
       })
-      .then(data => {
-        setData(data)
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error('Error loading settlement:', err)
-        setLoading(false)
-      })
+      .then(data => { setData(data); setLoading(false) })
+      .catch(() => setLoading(false))
   }, [roomCode])
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-slate-800 rounded-lg p-6">
-          <div className="text-white">Loading settlement...</div>
-        </div>
-      </div>
+      <ModalShell onClose={onClose}>
+        <p className="text-on-surface-variant text-center py-10">Loading settlement…</p>
+      </ModalShell>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold text-white mb-6">Settlement</h2>
+    <ModalShell onClose={onClose}>
+      <h2 className="text-xl font-bold text-on-surface mb-5">Settlement</h2>
 
-        {/* Player Nets */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-white mb-3">Final Positions</h3>
+      <div className="mb-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-2">Final Positions</p>
+        <div className="space-y-1.5">
+          {data.nets.map((net: any) => (
+            <div key={net.userId} className="flex justify-between items-center px-3 py-2 rounded-xl bg-surface-raised">
+              <span className="text-on-surface text-sm">{net.user.name}</span>
+              <span className={`font-bold text-sm ${net.netCents >= 0 ? 'chip-text-green' : 'chip-text-red'}`}>
+                {net.netCents >= 0 ? '+' : ''}${centsToUSD(net.netCents)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant mb-2">Required Transfers</p>
+        {data.edges.length === 0 ? (
+          <p className="text-on-surface-variant text-sm text-center py-4">All settled — no transfers needed.</p>
+        ) : (
           <div className="space-y-2">
-            {data.nets.map((net: any) => (
-              <div key={net.userId} className="bg-slate-700 rounded p-3 flex justify-between">
-                <span className="text-white">{net.user.name}</span>
-                <span className={`font-bold ${net.netCents >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {net.netCents >= 0 ? '+' : ''}${centsToUSD(net.netCents)}
-                </span>
+            {data.edges.map((edge: any, i: number) => (
+              <div key={i} className="bg-surface-raised border border-outline rounded-xl px-4 py-3 text-center">
+                <p className="text-on-surface text-sm">
+                  <span className="font-semibold">{edge.fromUser.name}</span>
+                  <span className="text-on-surface-variant mx-2">→</span>
+                  <span className="font-semibold">{edge.toUser.name}</span>
+                </p>
+                <p className="chip-text-green font-bold text-2xl mt-1">${centsToUSD(edge.amountCents)}</p>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Settlement Edges */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-white mb-3">Required Transfers</h3>
-          {data.edges.length === 0 ? (
-            <div className="text-slate-400 text-center py-4">All settled! No transfers needed.</div>
-          ) : (
-            <div className="space-y-3">
-              {data.edges.map((edge: any, i: number) => (
-                <div key={i} className="bg-slate-700 rounded p-4">
-                  <div className="text-white text-center">
-                    <span className="font-semibold">{edge.fromUser.name}</span>
-                    <span className="mx-3 text-slate-400">→</span>
-                    <span className="font-semibold">{edge.toUser.name}</span>
-                  </div>
-                  <div className="text-center text-2xl font-bold text-green-400 mt-2">
-                    ${centsToUSD(edge.amountCents)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={onClose}
-          className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg"
-        >
-          Close
-        </button>
+        )}
       </div>
-    </div>
+
+      <SecondaryButton fullWidth onClick={onClose}>Close</SecondaryButton>
+    </ModalShell>
   )
 }

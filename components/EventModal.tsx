@@ -160,9 +160,9 @@ export default function EventModal({
   const title = eventType === 'BUY_IN' ? 'Buy In' : eventType === 'REBUY' ? 'Rebuy' : 'Request Cash Out'
   const submitLabel = isCashOut ? 'Request Cash Out' : 'Submit'
   const submitClassName = {
-    BUY_IN: 'flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg',
-    REBUY: 'flex-1 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-800 text-white rounded-lg',
-    CASH_OUT: 'flex-1 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded-lg',
+    BUY_IN:   'flex-1 py-2 bg-primary text-on-primary font-medium rounded-xl active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all',
+    REBUY:    'flex-1 py-2 bg-chip-purple-dim border border-chip-purple/35 chip-text-purple font-medium rounded-xl hover:bg-chip-purple/20 active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all',
+    CASH_OUT: 'flex-1 py-2 bg-chip-green-dim border border-chip-green/35 chip-text-green font-medium rounded-xl hover:bg-chip-green/20 active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all',
   }[eventType]
 
   return (
@@ -170,7 +170,7 @@ export default function EventModal({
         <h2 className="text-2xl font-bold text-white mb-4">{title}</h2>
 
         {isCashOut && (
-          <p className="text-sm text-amber-400 mb-4">
+          <p className="text-sm text-warning mb-4">
             Your request will be sent to the host for approval.
           </p>
         )}
@@ -178,7 +178,7 @@ export default function EventModal({
         <form onSubmit={handleSubmit} className="space-y-4">
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-on-surface-variant mb-2">
               Amount (USD)
             </label>
             <CurrencyInput
@@ -204,7 +204,7 @@ export default function EventModal({
                         const current = Math.max(0, parseFloat(amount) || 0)
                         setAmount((current + dollars).toFixed(2))
                       }}
-                      className="flex-shrink-0 px-3 py-1 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded-lg font-medium transition"
+                      className="flex-shrink-0 px-3 py-1 rounded-full border border-outline text-on-surface-variant hover:border-chip-green/35 hover:text-chip-green-text hover:bg-chip-green-dim text-xs font-medium active:scale-95 transition-all duration-150"
                     >
                       {label}
                     </button>
@@ -217,8 +217,8 @@ export default function EventModal({
           {/* ── Part 1: image upload with HEIC detection ── */}
           {requiresImage && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Chip stack photo <span className="text-red-400">*</span>
+              <label className="block text-sm font-medium text-on-surface-variant mb-2">
+                Chip stack photo <span className="chip-text-red">*</span>
               </label>
               <input
                 ref={fileInputRef}
@@ -231,7 +231,7 @@ export default function EventModal({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-2.5 border-2 border-dashed border-slate-500 hover:border-slate-400 rounded-lg text-slate-400 hover:text-slate-300 text-sm transition"
+                className="w-full py-2.5 border border-dashed border-outline hover:border-chip-white/25 rounded-xl text-on-surface-variant hover:text-on-surface text-sm transition-colors duration-150"
               >
                 {imageFile ? imageFile.name : 'Tap to take / choose a photo'}
               </button>
@@ -246,17 +246,17 @@ export default function EventModal({
                     type="button"
                     onClick={handleCountChips}
                     disabled={counting}
-                    className="mt-2 w-full py-2 bg-purple-700 hover:bg-purple-600 disabled:opacity-60 text-white text-sm rounded-lg font-medium transition"
+                    className="mt-2 w-full py-2 bg-chip-purple-dim border border-chip-purple/35 chip-text-purple hover:bg-chip-purple/20 disabled:opacity-50 text-sm rounded-xl font-medium transition-all duration-150"
                   >
                     {counting ? 'Counting…' : '✦ Count My Chips'}
                   </button>
                   {countError && (
-                    <p className="text-xs text-amber-400 mt-1">{countError}</p>
+                    <p className="text-xs text-warning mt-1">{countError}</p>
                   )}
                 </>
               )}
               {!imageFile && (
-                <p className="text-xs text-slate-500 mt-1">Required — hosts can see this photo</p>
+                <p className="text-xs text-on-surface-variant mt-1">Required — hosts can see this photo</p>
               )}
             </div>
           )}

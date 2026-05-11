@@ -37,6 +37,11 @@ body {
     text-wrap: balance;
   }
 
+  /* ── Shared input field style ───────────────────────────────────────── */
+  .input-field {
+    @apply w-full px-4 h-11 bg-surface border border-outline rounded-xl text-on-surface focus:outline-none focus:border-chip-green/35 transition-colors duration-150;
+  }
+
   /* ── Glass surface ──────────────────────────────────────────────────── */
   .glass-card {
     background: rgba(255, 255, 255, 0.03);

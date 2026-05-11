@@ -80,7 +80,7 @@ export default function NewRoomPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field"
                 placeholder="Friday Night Poker"
                 required
               />
@@ -102,7 +102,7 @@ export default function NewRoomPage() {
                 type="text"
                 value={blinds}
                 onChange={(e) => setBlinds(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field"
                 placeholder="1/2 or 0.5/1"
               />
             </FormField>
@@ -112,7 +112,7 @@ export default function NewRoomPage() {
                 type="number"
                 value={maxPlayers}
                 onChange={(e) => setMaxPlayers(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field"
                 placeholder="9"
                 min="2"
               />
@@ -126,13 +126,13 @@ export default function NewRoomPage() {
                   <button
                     type="button"
                     onClick={addChip}
-                    className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white text-sm rounded-lg font-medium transition"
+                    className="px-3 py-1.5 bg-surface-raised border border-outline hover:bg-outline text-on-surface text-sm rounded-lg font-medium transition-colors duration-150"
                   >
                     + Add Chip
                   </button>
                 }
               />
-              <p className="text-xs text-slate-500 -mt-4 mb-3">Define each chip color and its dollar value</p>
+              <p className="text-xs text-on-surface-variant -mt-4 mb-3">Define each chip color and its dollar value</p>
 
               <div className="space-y-2">
                 {chips.map((chip, i) => (
@@ -141,7 +141,7 @@ export default function NewRoomPage() {
                       type="text"
                       value={chip.color}
                       onChange={(e) => updateChip(i, 'color', e.target.value)}
-                      className="flex-1 px-3 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      className="input-field text-sm"
                       placeholder="Color (e.g. White, Red, Blue)"
                       required
                     />
@@ -160,7 +160,7 @@ export default function NewRoomPage() {
                       type="button"
                       onClick={() => removeChip(i)}
                       disabled={chips.length === 1}
-                      className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-400 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                      className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:chip-text-red disabled:opacity-30 disabled:cursor-not-allowed transition-colors duration-150"
                       aria-label="Remove chip"
                     >
                       ✕

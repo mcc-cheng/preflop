@@ -138,14 +138,14 @@ function LoginContent() {
             {addedMethods.length > 0 && (
               <div className="space-y-2 mb-4">
                 {addedMethods.map((m, i) => (
-                  <div key={m.id} className="flex items-center gap-3 bg-slate-700 rounded-lg px-4 py-2.5">
-                    <span className="text-green-400 text-sm">✓</span>
+                  <div key={m.id} className="flex items-center gap-3 bg-surface-raised border border-outline rounded-xl px-4 py-2.5">
+                    <span className="chip-text-green text-sm">✓</span>
                     <div>
-                      <span className="text-white text-sm font-medium">{m.label}</span>
-                      <span className="text-slate-400 text-sm ml-2">{m.nickname || m.identifier}</span>
+                      <span className="text-on-surface text-sm font-medium">{m.label}</span>
+                      <span className="text-on-surface-variant text-sm ml-2">{m.nickname || m.identifier}</span>
                     </div>
                     {i === 0 && (
-                      <span className="ml-auto text-xs bg-green-700 text-green-100 px-2 py-0.5 rounded">Default</span>
+                      <span className="ml-auto text-xs bg-chip-green-dim border border-chip-green/35 chip-text-green px-2 py-0.5 rounded-full">Default</span>
                     )}
                   </div>
                 ))}
@@ -185,7 +185,7 @@ function LoginContent() {
                     setPaymentNickname('')
                     setShowPaymentForm(true)
                   }}
-                  className="w-full py-2 border border-dashed border-slate-600 hover:border-slate-400 text-slate-400 hover:text-slate-200 rounded-lg text-sm transition"
+                  className="w-full py-2 border border-dashed border-outline hover:border-chip-white/25 text-on-surface-variant hover:text-on-surface rounded-xl text-sm transition-colors duration-150"
                 >
                   + Add another payment method
                 </button>
@@ -195,7 +195,7 @@ function LoginContent() {
             <button
               onClick={() => router.push(redirectTo)}
               disabled={!canContinue}
-              className="mt-5 w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg font-semibold transition"
+              className="mt-5 w-full h-11 bg-primary text-on-primary disabled:bg-surface-raised disabled:text-on-surface-variant rounded-xl font-semibold text-sm active:scale-95 disabled:pointer-events-none transition-all duration-150"
             >
               {canContinue ? 'Enter App →' : `Add ${remaining} more to continue`}
             </button>
@@ -232,7 +232,7 @@ function LoginContent() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-field"
                     required
                   />
                 </FormField>
@@ -242,7 +242,7 @@ function LoginContent() {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                    className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-field"
                     placeholder="starts with a letter, a–z, 0–9, _"
                     pattern="^[a-z][a-z0-9_]{2,19}$"
                     minLength={3}
@@ -256,7 +256,7 @@ function LoginContent() {
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="input-field"
                     placeholder="+1 555 123 4567"
                     required
                   />
@@ -269,7 +269,7 @@ function LoginContent() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field"
                 required
               />
             </FormField>
@@ -279,7 +279,7 @@ function LoginContent() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input-field"
                 required
                 minLength={8}
               />
@@ -295,7 +295,7 @@ function LoginContent() {
           <div className="mt-6 text-center">
             <button
               onClick={() => { setIsRegistering(!isRegistering); setError('') }}
-              className="text-blue-400 hover:text-blue-300 text-sm"
+              className="text-on-surface-variant hover:text-on-surface text-sm transition-colors duration-150"
             >
               {isRegistering ? 'Already have an account? Sign in' : "Don't have an account? Register"}
             </button>
