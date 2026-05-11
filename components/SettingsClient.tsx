@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Card,
   SectionHeader,
@@ -15,7 +15,7 @@ import {
   PAYMENT_TYPES,
 } from '@/components/ui'
 
-export default function SettingsClient({ profile }: { profile: any }) {
+export default function SettingsClient({ profile, initialTab }: { profile: any; initialTab?: string }) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(profile.name)
   const [username, setUsername] = useState(profile.username)
@@ -23,6 +23,14 @@ export default function SettingsClient({ profile }: { profile: any }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showAddPayment, setShowAddPayment] = useState(false)
+
+  const paymentSectionRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (initialTab === 'payments') {
+      paymentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [initialTab])
 
   const [paymentType, setPaymentType] = useState('VENMO')
   const [paymentIdentifier, setPaymentIdentifier] = useState('')
@@ -175,6 +183,7 @@ export default function SettingsClient({ profile }: { profile: any }) {
       </Card>
 
       {/* Payment Methods */}
+      <div ref={paymentSectionRef}>
       <Card>
         <SectionHeader
           title="Payment Methods"
@@ -239,6 +248,7 @@ export default function SettingsClient({ profile }: { profile: any }) {
           )}
         </div>
       </Card>
+      </div>
     </div>
   )
 }

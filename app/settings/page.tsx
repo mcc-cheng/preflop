@@ -4,8 +4,14 @@ import { redirect } from 'next/navigation'
 import SettingsClient from '@/components/SettingsClient'
 import { PageShell, BackLink } from '@/components/ui'
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ tab?: string }>
+}) {
   const user = await requireAuth()
+  const params = await searchParams
+  const initialTab = params?.tab ?? ''
 
   const profile = await prisma.user.findUnique({
     where: { id: user.id },
@@ -30,7 +36,7 @@ export default async function SettingsPage() {
 
       <h1 className="text-3xl font-bold text-white mb-8">Account Settings</h1>
 
-      <SettingsClient profile={profile} />
+      <SettingsClient profile={profile} initialTab={initialTab} />
     </PageShell>
   )
 }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname, useParams } from 'next/navigation'
+import { ProfileDropdown } from '@/components/ProfileDropdown'
 
 // Paths where the nav links and user avatar are hidden (onboarding / auth flows)
 const NAV_HIDDEN_PATHS = ['/login', '/register', '/settings/username']
@@ -37,9 +38,6 @@ export function TopBar() {
   const params = useParams()
   const code = params?.code as string | undefined
   const [menuOpen, setMenuOpen] = useState(false)
-
-  const name = (session?.user as any)?.name ?? ''
-  const initial = name.charAt(0).toUpperCase()
 
   const hideNav = NAV_HIDDEN_PATHS.some(p => pathname?.startsWith(p))
 
@@ -88,17 +86,9 @@ export function TopBar() {
           </nav>
         )}
 
-        {/* Right side: avatar + mobile hamburger */}
+        {/* Right side: profile dropdown + mobile hamburger */}
         <div className="flex items-center gap-2">
-          {session && !hideNav && (
-            <Link
-              href="/settings"
-              aria-label="Account settings"
-              className="w-8 h-8 rounded-full bg-surface-raised border border-chip-white/10 flex items-center justify-center text-on-surface-variant hover:text-on-surface text-sm font-semibold select-none transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chip-white/40"
-            >
-              {initial || '?'}
-            </Link>
-          )}
+          {session && !hideNav && <ProfileDropdown />}
 
           {session && !hideNav && (
             <button

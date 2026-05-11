@@ -32,9 +32,19 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes dropdown-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* ── Profile dropdown enter animation ──────────────────────────────── */
+  .animate-dropdown-in {
+    animation: dropdown-in 150ms ease both;
   }
 
   /* ── Shared input field style ───────────────────────────────────────── */
