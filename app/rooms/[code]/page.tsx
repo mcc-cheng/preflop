@@ -99,18 +99,18 @@ export default function RoomPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-on-surface-variant text-sm">Loading…</div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-400 text-xl mb-4">{error}</div>
-          <Link href="/rooms" className="text-blue-400 hover:text-blue-300">← Back to rooms</Link>
+          <div className="chip-text-red text-lg mb-4">{error}</div>
+          <Link href="/rooms" className="text-on-surface-variant hover:text-on-surface transition-colors duration-150">← Back to rooms</Link>
         </div>
       </div>
     )
@@ -178,6 +178,8 @@ export default function RoomPage() {
           roomCode={code}
           eventType={eventType}
           defaultAmount={settings.defaultBuyIn}
+          isHost={isHost}
+          chipTypes={room.chipTypes}
           onClose={() => setShowEventModal(false)}
           onSuccess={() => { setShowEventModal(false); fetchRoom() }}
         />
@@ -187,16 +189,17 @@ export default function RoomPage() {
       )}
       {showQR && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-xl"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl"
+          style={{ background: 'rgba(13,13,18,0.88)' }}
           onMouseDown={() => setShowQR(false)}
         >
           <div
-            className="relative w-full max-w-[min(92vw,680px)] rounded-2xl border border-white/10 bg-slate-950/95 p-6 shadow-2xl"
+            className="relative w-full max-w-[min(92vw,680px)] rounded-2xl border border-outline bg-surface p-6 shadow-2xl"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setShowQR(false)}
-              className="absolute right-4 top-4 rounded-full bg-slate-900/90 px-3 py-2 text-white shadow-lg hover:bg-slate-800"
+              className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-raised border border-outline text-on-surface-variant hover:text-on-surface transition-colors duration-150"
             >✕</button>
             <div className="flex flex-col items-center gap-6">
               <QRCode
@@ -204,14 +207,14 @@ export default function RoomPage() {
                 size={620}
                 label={`QR code for room ${room.code}`}
               />
-              <div className="text-center text-slate-100">
-                <p className="text-xl font-semibold">Scan to join — works in any browser or the mobile app</p>
-                <p className="text-sm text-slate-400 mt-2">
-                  Room code: <span className="font-mono text-white">{room.code}</span>
+              <div className="text-center">
+                <p className="text-base font-semibold text-on-surface">Scan to join — works in any browser</p>
+                <p className="text-sm text-on-surface-variant mt-1">
+                  Room code: <span className="font-mono text-on-surface">{room.code}</span>
                 </p>
                 <button
                   onClick={handleCopyRoomCode}
-                  className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  className="mt-4 h-9 px-5 rounded-xl border border-outline bg-surface-raised text-on-surface text-sm font-medium hover:bg-outline transition-colors duration-150"
                 >
                   {copiedRoomCode ? 'Copied!' : 'Copy Room Code'}
                 </button>

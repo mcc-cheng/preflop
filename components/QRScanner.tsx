@@ -128,12 +128,12 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="relative w-full max-w-sm rounded-xl bg-slate-900 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-          <h2 className="text-white font-semibold">Scan Room QR Code</h2>
+      <div className="relative w-full max-w-sm rounded-xl bg-surface border border-outline overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-outline">
+          <h2 className="text-on-surface font-semibold">Scan Room QR Code</h2>
           <button
             onClick={handleClose}
-            className="text-slate-400 hover:text-white text-2xl leading-none"
+            className="text-on-surface-variant hover:text-on-surface text-2xl leading-none transition-colors duration-150"
             aria-label="Close scanner"
           >
             &times;
@@ -151,31 +151,30 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
 
           {!ready && !cameraError && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-slate-400 text-sm">Starting camera…</div>
+              <div className="text-on-surface-variant text-sm">Starting camera…</div>
             </div>
           )}
 
           {ready && !invalidError && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-48 h-48 border-2 border-blue-400 rounded-lg opacity-70" />
+              <div className="w-48 h-48 border-2 border-chip-green-text rounded-xl opacity-70" />
             </div>
           )}
 
-          {/* Invalid QR overlay */}
           {invalidError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 gap-4 p-6">
-              <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="w-14 h-14 rounded-full bg-chip-red-dim flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 chip-text-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
               <div className="text-center">
-                <p className="text-white font-semibold text-lg">Invalid Room QR Code</p>
-                <p className="text-slate-400 text-sm mt-1">This QR code is not for a Preflop room.</p>
+                <p className="text-on-surface font-semibold text-lg">Invalid Room QR Code</p>
+                <p className="text-on-surface-variant text-sm mt-1">This QR code is not for a Preflop room.</p>
               </div>
               <button
                 onClick={resumeScanning}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+                className="px-5 py-2 bg-surface-raised border border-outline text-on-surface text-sm font-medium rounded-xl hover:bg-outline transition-colors duration-150"
               >
                 Try Again
               </button>
@@ -184,9 +183,9 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
         </div>
 
         {cameraError ? (
-          <div className="p-4 text-red-400 text-sm text-center">{cameraError}</div>
+          <div className="p-4 chip-text-red text-sm text-center">{cameraError}</div>
         ) : (
-          <div className="p-4 text-slate-400 text-sm text-center">
+          <div className="p-4 text-on-surface-variant text-sm text-center">
             {invalidError ? ' ' : 'Point your camera at the room QR code'}
           </div>
         )}

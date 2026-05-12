@@ -121,6 +121,17 @@ async function main() {
             { userId: charlie.id, role: 'PLAYER' },
           ],
         },
+        chipTypes: {
+          createMany: {
+            data: [
+              { color: 'White',  denomination: 100   }, // $1
+              { color: 'Red',    denomination: 500   }, // $5
+              { color: 'Blue',   denomination: 1000  }, // $10
+              { color: 'Green',  denomination: 2500  }, // $25
+              { color: 'Black',  denomination: 10000 }, // $100
+            ],
+          },
+        },
       },
     })
 

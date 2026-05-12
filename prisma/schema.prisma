@@ -10,29 +10,31 @@ datasource db {
 model User {
   id            String       @id @default(cuid())
   email         String       @unique
-  username      String       @unique
-  phone         String?      @unique
-  passwordHash  String?
-  name          String
-  profilePicture String?     @default("/default-avatar.png")
-  createdAt     DateTime     @default(now())
-  
+  username          String       @unique
+  usernameSetByUser Boolean      @default(false)
+  phone             String?      @unique
+  passwordHash      String?
+  name              String
+  profilePicture    String?      @default("/default-avatar.png")
+  createdAt         DateTime     @default(now())
+
   hostedRooms     Room[]           @relation("HostedRooms")
   memberships     RoomMember[]
   events          Event[]
   cashOutRequests CashOutRequest[]
   buyInRequests   BuyInRequest[]
   paymentMethods  PaymentMethod[]
-  
+
   // Friends system
   friendshipsInitiated Friendship[] @relation("UserFriendships")
   friendshipsReceived  Friendship[] @relation("FriendUser")
   sentFriendRequests   FriendRequest[] @relation("RequestSender")
   receivedFriendRequests FriendRequest[] @relation("RequestReceiver")
-  
+
   // Statistics
-  stats         UserStats?
-  
+  stats                 UserStats?
+  shareStatsWithFriends Boolean   @default(false)
+
   @@index([username])
   @@index([email])
 }
@@ -53,9 +55,18 @@ model Room {
   settlements      Settlement[]
   cashOutRequests  CashOutRequest[]
   buyInRequests    BuyInRequest[]
+  chipTypes        ChipType[]
 
   @@index([code])
   @@index([hostId])
+}
+
+model ChipType {
+  id           String @id @default(cuid())
+  roomId       String
+  room         Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  color        String
+  denomination Int    // cents
 }
 
 enum RoomRole {
@@ -119,6 +130,7 @@ model CashOutRequest {
   status      CashOutStatus @default(PENDING)
   createdAt   DateTime      @default(now())
   resolvedAt  DateTime?
+  imageData   String?
 
   @@index([roomId, status])
   @@index([userId])

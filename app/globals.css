@@ -3,25 +3,96 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-rgb: 15, 23, 42;
-  }
+  --color-background:          #0d0d12;
+  --color-surface:             #111118;
+  --color-surface-raised:      #18181f;
+  --color-outline:             #22223a;
+  --color-on-surface:          #FFFFFF;
+  --color-on-surface-variant:  #707088;
+  --color-primary:             #FFFFFF;
+  --color-on-primary:          #000000;
+  --color-success:             #2D5A3D;
+  --color-error:               #8B2E2E;
+  --color-warning:             #F59E0B;
+  --color-info:                #4A3060;
+  --nav-bg:                    rgba(13, 13, 18, 0.88);
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(ellipse at 22% 14%, rgba(45, 90, 61, 0.07) 0%, transparent 52%),
+    radial-gradient(ellipse at 78% 86%, rgba(74, 48, 96, 0.07) 0%, transparent 52%);
+  background-attachment: fixed;
+  color: var(--color-on-surface);
+}
+
+@keyframes slide-in-top {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* ── Profile dropdown enter animation ──────────────────────────────── */
+  .animate-dropdown-in {
+    animation: dropdown-in 150ms ease both;
+  }
+
+  /* ── Shared input field style ───────────────────────────────────────── */
+  .input-field {
+    @apply w-full px-4 h-11 bg-surface border border-outline rounded-xl text-on-surface focus:outline-none focus:border-chip-green/35 transition-colors duration-150;
+  }
+
+  /* ── Glass surface ──────────────────────────────────────────────────── */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 1rem;
+  }
+
+  /* ── Chip glows ─────────────────────────────────────────────────────── */
+  .chip-glow-green {
+    box-shadow: 0 0 16px rgba(45, 90, 61, 0.2), 0 0 48px rgba(45, 90, 61, 0.08);
+  }
+  .chip-glow-red {
+    box-shadow: 0 0 16px rgba(139, 46, 46, 0.2), 0 0 48px rgba(139, 46, 46, 0.08);
+  }
+  .chip-glow-purple {
+    box-shadow: 0 0 16px rgba(74, 48, 96, 0.2), 0 0 48px rgba(74, 48, 96, 0.08);
+  }
+
+  /* ── Chip borders (override glass-card border when combined) ────────── */
+  .chip-border-green  { border: 1px solid rgba(45, 90, 61, 0.35); }
+  .chip-border-red    { border: 1px solid rgba(139, 46, 46, 0.35); }
+  .chip-border-purple { border: 1px solid rgba(74, 48, 96, 0.35); }
+  .chip-border-white  { border: 1px solid rgba(232, 232, 224, 0.15); }
+
+  /* ── Chip text (lightened for readability on dark backgrounds) ──────── */
+  .chip-text-green  { color: #4A8C63; }
+  .chip-text-red    { color: #C45555; }
+  .chip-text-purple { color: #7B5EA7; }
+  .chip-text-white  { color: #E8E8E0; }
+
+  /* ── Scanline texture (optional hero overlay) ───────────────────────── */
+  .scanline {
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.008) 2px,
+      rgba(255, 255, 255, 0.008) 4px
+    );
+    pointer-events: none;
   }
 }

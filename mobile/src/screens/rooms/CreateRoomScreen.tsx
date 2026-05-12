@@ -92,14 +92,17 @@ export default function CreateRoomScreen({ navigation }: any) {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Default Buy-In Amount ($)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="100"
-            value={buyInAmount}
-            onChangeText={setBuyInAmount}
-            keyboardType="decimal-pad"
-          />
+          <Text style={styles.label}>Default Buy-In Amount</Text>
+          <View style={styles.currencyRow}>
+            <Text style={styles.currencyPrefix}>$</Text>
+            <TextInput
+              style={[styles.input, styles.currencyInput]}
+              placeholder="100"
+              value={buyInAmount}
+              onChangeText={setBuyInAmount}
+              keyboardType="decimal-pad"
+            />
+          </View>
           <Text style={styles.hint}>
             Players can buy in for this amount or customize their own
           </Text>
@@ -181,6 +184,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     color: '#111827',
+  },
+  currencyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 12,
+  },
+  currencyPrefix: {
+    paddingLeft: 16,
+    fontSize: 16,
+    color: '#9ca3af',
+  },
+  currencyInput: {
+    flex: 1,
+    borderWidth: 0,
+    paddingHorizontal: 8,
   },
   hint: {
     fontSize: 14,

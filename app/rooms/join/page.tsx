@@ -3,8 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { PageShell, BackLink, Card, FormField, PrimaryButton, InlineError, Divider } from '@/components/ui'
 
 const QRScanner = dynamic(() => import('@/components/QRScanner'), { ssr: false })
 
@@ -38,13 +38,11 @@ function JoinRoomContent() {
     }
   }
 
-  // Auto-join when a code arrives via QR link and the user is already logged in
   useEffect(() => {
     const paramCode = searchParams.get('code')
     if (!paramCode || status === 'loading') return
 
     if (status === 'unauthenticated') {
-      // Send them to login, then back here after
       const redirect = `/rooms/join?code=${paramCode.toUpperCase()}`
       router.replace(`/login?redirect=${encodeURIComponent(redirect)}`)
       return
@@ -67,82 +65,64 @@ function JoinRoomContent() {
     submitCode(scannedCode)
   }
 
-  // While auto-joining from QR link, show a minimal loading state
   if (searchParams.get('code') && (status === 'loading' || (status === 'authenticated' && loading))) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-slate-400 text-sm">Joining room…</div>
-      </div>
+      <PageShell variant="centered">
+        <div className="text-on-surface-variant text-sm">Joining room…</div>
+      </PageShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <PageShell>
       {scanning && (
         <QRScanner onScan={handleScan} onClose={() => setScanning(false)} />
       )}
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-md mx-auto">
-          <Link href="/rooms" className="text-blue-400 hover:text-blue-300 mb-4 inline-block">
-            ← Back to rooms
-          </Link>
+      <div className="max-w-md mx-auto">
+        <BackLink href="/rooms" label="Back to rooms" />
 
-          <div className="bg-slate-800 rounded-lg p-8">
-            <h1 className="text-3xl font-bold text-white mb-6">Join Room</h1>
+        <Card padding="lg">
+          <h1 className="text-3xl font-bold text-white mb-6">Join Room</h1>
 
-            <button
-              onClick={() => setScanning(true)}
-              className="w-full flex items-center justify-center gap-2 py-3 mb-6 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition border border-slate-600"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" />
-                <rect x="7" y="7" width="4" height="4" rx="0.5" strokeLinecap="round" strokeLinejoin="round" />
-                <rect x="13" y="7" width="4" height="4" rx="0.5" strokeLinecap="round" strokeLinejoin="round" />
-                <rect x="7" y="13" width="4" height="4" rx="0.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h4v-4" />
-              </svg>
-              Scan QR Code
-            </button>
+          <button
+            onClick={() => setScanning(true)}
+            className="w-full flex items-center justify-center gap-2 h-11 mb-6 bg-surface-raised border border-outline hover:bg-outline text-on-surface rounded-xl font-medium transition-colors duration-150"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2" />
+              <rect x="7" y="7" width="4" height="4" rx="0.5" strokeLinecap="round" strokeLinejoin="round" />
+              <rect x="13" y="7" width="4" height="4" rx="0.5" strokeLinecap="round" strokeLinejoin="round" />
+              <rect x="7" y="13" width="4" height="4" rx="0.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h4v-4" />
+            </svg>
+            Scan QR Code
+          </button>
 
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex-1 h-px bg-slate-600" />
-              <span className="text-slate-400 text-sm">or enter code</span>
-              <div className="flex-1 h-px bg-slate-600" />
-            </div>
+          <Divider label="or enter code" />
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Room Code
-                </label>
-                <input
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  className="w-full px-4 py-3 bg-slate-700 text-white text-center text-2xl font-mono rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                  placeholder="ABC123"
-                  maxLength={6}
-                  required
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+            <FormField label="Room Code">
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                className="w-full px-4 py-3 bg-surface border border-outline text-on-surface text-center text-2xl font-mono rounded-xl focus:outline-none focus:border-chip-green/35 transition-colors duration-150 uppercase"
+                placeholder="ABC123"
+                maxLength={6}
+                required
+              />
+            </FormField>
 
-              {error && (
-                <div className="text-red-400 text-sm">{error}</div>
-              )}
+            <InlineError message={error} />
 
-              <button
-                type="submit"
-                disabled={loading || code.length !== 6}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white rounded-lg font-semibold transition"
-              >
-                {loading ? 'Joining...' : 'Join Room'}
-              </button>
-            </form>
-          </div>
-        </div>
+            <PrimaryButton type="submit" loading={loading} loadingText="Joining..." disabled={code.length !== 6}>
+              Join Room
+            </PrimaryButton>
+          </form>
+        </Card>
       </div>
-    </div>
+    </PageShell>
   )
 }
 

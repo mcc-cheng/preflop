@@ -6,12 +6,18 @@ import { z } from 'zod'
 import { handleApiError, moneyAmountSchema, roomUserSelect } from '@/lib/api'
 import { requirePaymentSetup } from '@/lib/payment-eligibility'
 
+const ChipEntrySchema = z.object({
+  color: z.string().trim().min(1, 'Color is required').max(30),
+  denomination: z.number().int().positive('Denomination must be a positive integer (cents)'),
+})
+
 const CreateRoomSchema = z.object({
   name: z.string().trim().min(1).max(80),
   defaultBuyIn: moneyAmountSchema,
   blinds: z.string().trim().max(24).optional().or(z.literal('')),
   currency: z.literal('USD').default('USD'),
   maxPlayers: z.number().int().min(2).max(20).optional(),
+  chips: z.array(ChipEntrySchema).min(1, 'At least one chip type is required'),
 })
 
 export async function POST(request: Request) {
@@ -41,6 +47,11 @@ export async function POST(request: Request) {
                 userId: user.id,
                 role: 'HOST'
               }
+            },
+            chipTypes: {
+              createMany: {
+                data: data.chips.map(c => ({ color: c.color, denomination: c.denomination })),
+              }
             }
           },
           include: {
@@ -53,7 +64,8 @@ export async function POST(request: Request) {
                   select: roomUserSelect,
                 }
               }
-            }
+            },
+            chipTypes: true,
           }
         })
         break
