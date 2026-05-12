@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { roomUserSelect } from '@/lib/api'
 import Link from 'next/link'
@@ -21,8 +21,8 @@ export default async function RoomsPage({
 }: {
   searchParams?: Promise<{ history?: string }>
 }) {
-  let user: { id: string; email: string; name: string }
-  try { user = await requireAuth() } catch { redirect('/login') }
+  const user = await getCurrentUser() as { id: string; email: string; name: string } | undefined
+  if (!user) redirect('/login')
   const params = await searchParams
   const showingHistory = params?.history === 'true'
 

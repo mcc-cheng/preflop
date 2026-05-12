@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 import SettingsClient from '@/components/SettingsClient'
@@ -9,7 +9,8 @@ export default async function SettingsPage({
 }: {
   searchParams?: Promise<{ tab?: string }>
 }) {
-  const user = await requireAuth()
+  const user = await getCurrentUser() as { id: string; email: string; name: string } | undefined
+  if (!user) redirect('/login')
   const params = await searchParams
   const initialTab = params?.tab ?? ''
 

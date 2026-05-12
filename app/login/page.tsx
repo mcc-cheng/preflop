@@ -48,34 +48,38 @@ function LoginContent() {
     setError('')
     setLoading(true)
 
-    if (isRegistering) {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name, username, phone }),
-      })
+    try {
+      if (isRegistering) {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, name, username, phone }),
+        })
 
-      if (res.ok) {
-        const result = await signIn('credentials', { email, password, redirect: false })
-        if (result?.ok) {
-          setRegistrationStep(2)
+        if (res.ok) {
+          const result = await signIn('credentials', { email, password, redirect: false, callbackUrl: redirectTo })
+          if (result?.ok) {
+            setRegistrationStep(2)
+          } else {
+            setError('Account created but sign-in failed. Try logging in.')
+          }
         } else {
-          setError('Account created but sign-in failed. Try logging in.')
+          const data = await res.json()
+          setError(data.error || 'Registration failed')
         }
       } else {
-        const data = await res.json()
-        setError(data.error || 'Registration failed')
+        const result = await signIn('credentials', { email, password, redirect: false, callbackUrl: redirectTo })
+        if (result?.ok) {
+          router.push(redirectTo)
+        } else {
+          setError('Invalid email or password')
+        }
       }
-    } else {
-      const result = await signIn('credentials', { email, password, redirect: false })
-      if (result?.ok) {
-        router.push(redirectTo)
-      } else {
-        setError('Invalid email or password')
-      }
+    } catch {
+      setError('Sign-in failed. Please try again.')
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   const handleAddPaymentMethod = async (e: React.FormEvent) => {
