@@ -18,7 +18,7 @@ model User {
   profilePicture    String?      @default("/default-avatar.png")
   createdAt         DateTime     @default(now())
   emailVerified           Boolean   @default(false)
-  emailVerificationToken  String?   @unique
+  emailVerificationToken  String?
   emailVerificationExpiry DateTime?
 
   hostedRooms     Room[]           @relation("HostedRooms")

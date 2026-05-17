@@ -4,8 +4,7 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { handleApiError, nameSchema, usernameSchema, jsonError } from '@/lib/api'
 import { normalizePhoneToE164, isValidUsername, RESERVED_USERNAMES } from '@/lib/validation'
-import { sendVerificationEmail } from '@/lib/email'
-import { randomUUID } from 'crypto'
+import { sendVerificationEmail, generateVerificationCode } from '@/lib/email'
 
 const DUPLICATE_ERROR = 'An account with these details already exists. Try logging in or use different information.'
 
@@ -35,7 +34,7 @@ export async function POST(request: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10)
 
-    const verificationToken = randomUUID()
+    const verificationToken = generateVerificationCode()
     const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
     const user = await prisma.user.create({

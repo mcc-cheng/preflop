@@ -4,19 +4,19 @@ import { jsonError } from '@/lib/api'
 
 export async function POST(request: Request) {
   try {
-    const { token } = await request.json()
+    const { email, code } = await request.json()
 
-    if (!token || typeof token !== 'string') {
-      return jsonError('Invalid token', 400)
+    if (!email || !code || typeof code !== 'string') {
+      return jsonError('Email and code are required', 400)
     }
 
-    const user = await prisma.user.findUnique({
-      where: { emailVerificationToken: token },
+    const user = await prisma.user.findFirst({
+      where: { email: email.trim().toLowerCase(), emailVerificationToken: code.trim() },
       select: { id: true, emailVerified: true, emailVerificationExpiry: true },
     })
 
     if (!user) {
-      return jsonError('Invalid or expired verification link', 400)
+      return jsonError('Incorrect code. Please try again.', 400)
     }
 
     if (user.emailVerified) {
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     if (user.emailVerificationExpiry && user.emailVerificationExpiry < new Date()) {
-      return jsonError('Verification link has expired. Please register again or request a new link.', 400)
+      return jsonError('This code has expired. Please register again.', 400)
     }
 
     await prisma.user.update({
