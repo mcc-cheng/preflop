@@ -18,6 +18,81 @@ import {
 
 const REQUIRED_METHODS = 2
 
+function VerifyCodeForm({
+  email,
+  password,
+  onSuccess,
+  onBack,
+}: {
+  email: string
+  password: string
+  onSuccess: () => void
+  onBack: () => void
+}) {
+  const [code, setCode] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const res = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: code.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Verification failed')
+        setLoading(false)
+        return
+      }
+      const result = await signIn('credentials', { email, password, redirect: false })
+      if (result?.ok) {
+        onSuccess()
+      } else {
+        setError('Verified! But sign-in failed — try logging in manually.')
+        setLoading(false)
+      }
+    } catch {
+      setError('Something went wrong. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-xs text-on-surface-variant uppercase tracking-wide mb-1.5">6-digit code</label>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          className="input-field text-center text-2xl font-mono tracking-widest"
+          placeholder="000000"
+          maxLength={6}
+          autoFocus
+          required
+        />
+      </div>
+      <InlineError message={error} />
+      <PrimaryButton type="submit" loading={loading} loadingText="Verifying…">
+        Verify
+      </PrimaryButton>
+      <button
+        type="button"
+        onClick={onBack}
+        className="w-full text-center text-on-surface-variant hover:text-on-surface text-sm transition-colors duration-150"
+      >
+        Back to Sign In
+      </button>
+    </form>
+  )
+}
+
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -120,7 +195,7 @@ function LoginContent() {
     setPaymentLoading(false)
   }
 
-  // ── Step 3: Check Your Email ────────────────────────────────────────
+  // ── Step 3: Enter Verification Code ─────────────────────────────────
   if (isRegistering && registrationStep === 3) {
     return (
       <PageShell variant="centered">
@@ -128,21 +203,18 @@ function LoginContent() {
           <div className="text-center mb-8">
             <Link href="/" className="text-4xl font-bold text-white">🃏 Preflop</Link>
           </div>
-          <Card padding="lg" className="shadow-xl text-center">
-            <div className="text-5xl mb-4">📬</div>
-            <h2 className="text-2xl font-bold text-white mb-3">Check your email</h2>
-            <p className="text-slate-400 text-sm mb-2">
-              We sent a verification link to <span className="text-white font-medium">{email}</span>.
-            </p>
+          <Card padding="lg" className="shadow-xl">
+            <StepIndicator steps={['Account', 'Verify', 'Payments']} currentStep={2} />
+            <h2 className="text-2xl font-bold text-white mb-2 mt-6">Check your email</h2>
             <p className="text-slate-400 text-sm mb-6">
-              Click the link to verify your account, then come back to sign in.
+              We sent a 6-digit code to <span className="text-white font-medium">{email}</span>.
             </p>
-            <button
-              onClick={() => { setIsRegistering(false); setRegistrationStep(1) }}
-              className="text-on-surface-variant hover:text-on-surface text-sm transition-colors duration-150"
-            >
-              Back to Sign In
-            </button>
+            <VerifyCodeForm
+              email={email}
+              password={password}
+              onSuccess={() => setRegistrationStep(2)}
+              onBack={() => { setIsRegistering(false); setRegistrationStep(1) }}
+            />
           </Card>
         </div>
       </PageShell>
@@ -162,7 +234,7 @@ function LoginContent() {
           </div>
 
           <Card padding="lg" className="shadow-xl">
-            <StepIndicator steps={['Account', 'Payments']} currentStep={2} />
+            <StepIndicator steps={['Account', 'Verify', 'Payments']} currentStep={3} />
 
             <h2 className="text-2xl font-bold text-white mb-1 mt-6">Set Up Payment Methods</h2>
             <p className="text-slate-400 text-sm mb-6">
@@ -256,7 +328,7 @@ function LoginContent() {
 
           {isRegistering && (
             <div className="mb-6">
-              <StepIndicator steps={['Account', 'Payments']} currentStep={1} />
+              <StepIndicator steps={['Account', 'Verify', 'Payments']} currentStep={1} />
             </div>
           )}
 
