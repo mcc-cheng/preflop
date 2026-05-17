@@ -30,4 +30,5 @@ export interface RoomDashboardProps {
   onBuyInAction: (id: string, action: 'approve' | 'reject') => void
   onShowQR: () => void
   onShowSettlement: () => void
+  onEditRoom?: (updates: Record<string, any>) => Promise<void>
 }
