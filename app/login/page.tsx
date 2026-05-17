@@ -23,9 +23,11 @@ function LoginContent() {
   const searchParams = useSearchParams()
   const isRegister = searchParams.get('register') === 'true'
   const redirectTo = searchParams.get('redirect') || '/rooms'
+  const justVerified = searchParams.get('verified') === 'true'
+  const setupPayments = searchParams.get('setup') === 'payments'
 
   const [isRegistering, setIsRegistering] = useState(isRegister)
-  const [registrationStep, setRegistrationStep] = useState(1)
+  const [registrationStep, setRegistrationStep] = useState(setupPayments ? 2 : 1)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -57,12 +59,7 @@ function LoginContent() {
         })
 
         if (res.ok) {
-          const result = await signIn('credentials', { email, password, redirect: false, callbackUrl: redirectTo })
-          if (result?.ok) {
-            setRegistrationStep(2)
-          } else {
-            setError('Account created but sign-in failed. Try logging in.')
-          }
+          setRegistrationStep(3)
         } else {
           const data = await res.json()
           setError(data.error || 'Registration failed')
@@ -70,9 +67,13 @@ function LoginContent() {
       } else {
         const result = await signIn('credentials', { email, password, redirect: false, callbackUrl: redirectTo })
         if (result?.ok) {
-          router.push(redirectTo)
+          if (setupPayments) {
+            setRegistrationStep(2)
+          } else {
+            router.push(redirectTo)
+          }
         } else {
-          setError('Invalid email or password')
+          setError('Invalid email or password. If you just registered, check your inbox to verify your email first.')
         }
       }
     } catch {
@@ -119,8 +120,37 @@ function LoginContent() {
     setPaymentLoading(false)
   }
 
+  // ── Step 3: Check Your Email ────────────────────────────────────────
+  if (isRegistering && registrationStep === 3) {
+    return (
+      <PageShell variant="centered">
+        <div className="max-w-md w-full">
+          <div className="text-center mb-8">
+            <Link href="/" className="text-4xl font-bold text-white">🃏 Preflop</Link>
+          </div>
+          <Card padding="lg" className="shadow-xl text-center">
+            <div className="text-5xl mb-4">📬</div>
+            <h2 className="text-2xl font-bold text-white mb-3">Check your email</h2>
+            <p className="text-slate-400 text-sm mb-2">
+              We sent a verification link to <span className="text-white font-medium">{email}</span>.
+            </p>
+            <p className="text-slate-400 text-sm mb-6">
+              Click the link to verify your account, then come back to sign in.
+            </p>
+            <button
+              onClick={() => { setIsRegistering(false); setRegistrationStep(1) }}
+              className="text-on-surface-variant hover:text-on-surface text-sm transition-colors duration-150"
+            >
+              Back to Sign In
+            </button>
+          </Card>
+        </div>
+      </PageShell>
+    )
+  }
+
   // ── Step 2: Payment Setup ──────────────────────────────────────────
-  if (isRegistering && registrationStep === 2) {
+  if (registrationStep === 2) {
     const remaining = REQUIRED_METHODS - addedMethods.length
     const canContinue = addedMethods.length >= REQUIRED_METHODS
 
@@ -218,6 +248,12 @@ function LoginContent() {
         </div>
 
         <Card padding="lg" className="shadow-xl">
+          {justVerified && (
+            <div className="mb-5 px-4 py-3 rounded-xl bg-chip-green-dim border border-chip-green/35 chip-text-green text-sm font-medium">
+              Email verified! Sign in to continue setting up your account.
+            </div>
+          )}
+
           {isRegistering && (
             <div className="mb-6">
               <StepIndicator steps={['Account', 'Payments']} currentStep={1} />

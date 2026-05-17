@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { handleApiError, nameSchema, usernameSchema, jsonError } from '@/lib/api'
 import { normalizePhoneToE164, isValidUsername, RESERVED_USERNAMES } from '@/lib/validation'
+import { sendVerificationEmail } from '@/lib/email'
+import { randomUUID } from 'crypto'
 
 const DUPLICATE_ERROR = 'An account with these details already exists. Try logging in or use different information.'
 
@@ -33,6 +35,9 @@ export async function POST(request: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10)
 
+    const verificationToken = randomUUID()
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
     const user = await prisma.user.create({
       data: {
         email,
@@ -41,10 +46,16 @@ export async function POST(request: Request) {
         username,
         usernameSetByUser: true,
         phone,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpiry: verificationExpiry,
         stats: {
           create: {},
         },
       },
+    })
+
+    await sendVerificationEmail(user.email, user.name, verificationToken).catch(() => {
+      // Non-fatal: user can request a new link
     })
 
     return NextResponse.json({
@@ -52,6 +63,7 @@ export async function POST(request: Request) {
       email: user.email,
       name: user.name,
       username: user.username,
+      requiresVerification: true,
     })
   } catch (error: any) {
     if (error?.code === 'P2002') {

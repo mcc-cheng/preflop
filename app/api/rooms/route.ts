@@ -14,6 +14,7 @@ const ChipEntrySchema = z.object({
 const CreateRoomSchema = z.object({
   name: z.string().trim().min(1).max(80),
   defaultBuyIn: moneyAmountSchema,
+  entryFee: z.number().finite().min(0).max(1_000_000).optional(),
   blinds: z.string().trim().max(24).optional().or(z.literal('')),
   currency: z.literal('USD').default('USD'),
   maxPlayers: z.number().int().min(2).max(20).optional(),
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
             settings: {
               name: data.name,
               defaultBuyIn: data.defaultBuyIn,
+              entryFee: data.entryFee ?? undefined,
               blinds: data.blinds || undefined,
               currency: data.currency,
               maxPlayers: data.maxPlayers,

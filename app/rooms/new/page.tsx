@@ -13,6 +13,7 @@ export default function NewRoomPage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [defaultBuyIn, setDefaultBuyIn] = useState('100')
+  const [entryFee, setEntryFee] = useState('')
   const [blinds, setBlinds] = useState('1/2')
   const [maxPlayers, setMaxPlayers] = useState('')
   const [chips, setChips] = useState<ChipEntry[]>([{ color: '', denomination: '' }])
@@ -49,6 +50,7 @@ export default function NewRoomPage() {
       body: JSON.stringify({
         name,
         defaultBuyIn: parseFloat(defaultBuyIn),
+        entryFee: entryFee ? parseFloat(entryFee) : undefined,
         blinds: blinds || undefined,
         maxPlayers: maxPlayers ? parseInt(maxPlayers) : undefined,
         currency: 'USD',
@@ -94,6 +96,16 @@ export default function NewRoomPage() {
                 step="0.01"
                 min="0"
                 required
+              />
+            </FormField>
+
+            <FormField label="Entry Fee (optional)" hint="One-time fee charged to each player when they join">
+              <CurrencyInput
+                value={entryFee}
+                onChange={(e) => setEntryFee(e.target.value)}
+                placeholder="0"
+                step="0.01"
+                min="0"
               />
             </FormField>
 

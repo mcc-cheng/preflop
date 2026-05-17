@@ -5,6 +5,134 @@ import { centsToUSD, formatTimestamp } from '@/lib/utils'
 import type { RoomDashboardProps } from './types'
 import { BackLink, EmptyState } from '@/components/ui'
 
+function EditRoomModal({
+  settings,
+  onClose,
+  onSave,
+}: {
+  settings: any
+  onClose: () => void
+  onSave: (updates: Record<string, any>) => Promise<void>
+}) {
+  const [name, setName] = useState(settings.name ?? '')
+  const [defaultBuyIn, setDefaultBuyIn] = useState(String(settings.defaultBuyIn ?? ''))
+  const [entryFee, setEntryFee] = useState(settings.entryFee != null ? String(settings.entryFee) : '')
+  const [blinds, setBlinds] = useState(settings.blinds ?? '')
+  const [maxPlayers, setMaxPlayers] = useState(settings.maxPlayers != null ? String(settings.maxPlayers) : '')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      await onSave({
+        name: name.trim() || undefined,
+        defaultBuyIn: defaultBuyIn ? parseFloat(defaultBuyIn) : undefined,
+        entryFee: entryFee ? parseFloat(entryFee) : null,
+        blinds: blinds || undefined,
+        maxPlayers: maxPlayers ? parseInt(maxPlayers) : null,
+      })
+      onClose()
+    } catch (err: any) {
+      setError(err.message || 'Failed to save changes')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl"
+      style={{ background: 'rgba(13,13,18,0.88)' }}
+      onMouseDown={onClose}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl border border-outline bg-surface p-6 shadow-2xl"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-raised border border-outline text-on-surface-variant hover:text-on-surface transition-colors duration-150"
+        >✕</button>
+        <h2 className="text-xl font-bold text-on-surface mb-5">Edit Room</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs text-on-surface-variant uppercase tracking-wide mb-1.5">Room Name</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} className="input-field" />
+          </div>
+          <div>
+            <label className="block text-xs text-on-surface-variant uppercase tracking-wide mb-1.5">Default Buy-in (USD)</label>
+            <input type="number" value={defaultBuyIn} onChange={(e) => setDefaultBuyIn(e.target.value)} className="input-field" step="0.01" min="0" />
+          </div>
+          <div>
+            <label className="block text-xs text-on-surface-variant uppercase tracking-wide mb-1.5">Entry Fee (optional)</label>
+            <input type="number" value={entryFee} onChange={(e) => setEntryFee(e.target.value)} className="input-field" step="0.01" min="0" placeholder="0" />
+          </div>
+          <div>
+            <label className="block text-xs text-on-surface-variant uppercase tracking-wide mb-1.5">Blinds (optional)</label>
+            <input value={blinds} onChange={(e) => setBlinds(e.target.value)} className="input-field" placeholder="1/2" />
+          </div>
+          <div>
+            <label className="block text-xs text-on-surface-variant uppercase tracking-wide mb-1.5">Max Players (optional)</label>
+            <input type="number" value={maxPlayers} onChange={(e) => setMaxPlayers(e.target.value)} className="input-field" min="2" max="20" placeholder="9" />
+          </div>
+          {error && <p className="text-sm chip-text-red">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-10 bg-primary text-on-primary rounded-xl font-semibold text-sm disabled:opacity-60 transition-opacity"
+          >
+            {loading ? 'Saving…' : 'Save Changes'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function SettlementInfoModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl"
+      style={{ background: 'rgba(13,13,18,0.88)' }}
+      onMouseDown={onClose}
+    >
+      <div
+        className="relative w-full max-w-lg rounded-2xl border border-outline bg-surface p-6 shadow-2xl"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-raised border border-outline text-on-surface-variant hover:text-on-surface transition-colors duration-150"
+        >✕</button>
+        <h2 className="text-xl font-bold text-on-surface mb-1">How Settlement Works</h2>
+        <p className="text-on-surface-variant text-sm mb-5">A quick explainer on how the ledger is calculated.</p>
+
+        <div className="space-y-4 text-sm">
+          <div className="bg-surface-raised border border-outline rounded-xl p-4">
+            <p className="font-semibold text-on-surface mb-1">Step 1 — Calculate each player's net</p>
+            <p className="text-on-surface-variant">Net = total cashed out − total bought in. A positive net means they won; negative means they lost.</p>
+          </div>
+          <div className="bg-surface-raised border border-outline rounded-xl p-4">
+            <p className="font-semibold text-on-surface mb-1">Step 2 — Split into winners and losers</p>
+            <p className="text-on-surface-variant">Players with a positive net are <span className="chip-text-green font-medium">creditors</span> (owed money). Players with a negative net are <span className="chip-text-red font-medium">debtors</span> (owe money).</p>
+          </div>
+          <div className="bg-surface-raised border border-outline rounded-xl p-4">
+            <p className="font-semibold text-on-surface mb-1">Step 3 — Greedy matching (fewest transfers)</p>
+            <p className="text-on-surface-variant">The biggest debtor pays the biggest creditor. If the debtor's loss is fully covered, they're done. If there's leftover, the creditor pays the next-biggest debtor. Repeat until everyone is settled.</p>
+          </div>
+          <div className="bg-chip-green-dim border border-chip-green/35 rounded-xl p-4">
+            <p className="font-semibold chip-text-green mb-1">Result</p>
+            <p className="text-on-surface-variant">This produces the minimum number of transfers needed to settle all debts, so nobody has to make more payments than necessary.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000)
   const h = Math.floor(totalSeconds / 3600)
@@ -35,9 +163,12 @@ export default function HostDashboard({
   onBuyInAction,
   onShowQR,
   onShowSettlement,
+  onEditRoom,
 }: RoomDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('Players')
   const [now, setNow] = useState(() => Date.now())
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showInfoModal, setShowInfoModal] = useState(false)
 
   useEffect(() => {
     if (room.endedAt) return
@@ -59,15 +190,31 @@ export default function HostDashboard({
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-bold text-on-surface">{settings.name}</h1>
               <span className="text-xs bg-chip-purple-dim border border-chip-purple/35 chip-text-purple px-2 py-0.5 rounded-full font-semibold">HOST</span>
+              <button
+                onClick={() => setShowInfoModal(true)}
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-surface-raised border border-outline text-on-surface-variant hover:text-on-surface text-xs font-bold transition-colors duration-150"
+                title="How settlement works"
+              >?</button>
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-on-surface-variant mt-1">
               <span>Code: <span className="font-mono text-on-surface">{code}</span></span>
               {settings.blinds && <span>Blinds: <span className="text-on-surface">{settings.blinds}</span></span>}
               {settings.maxPlayers && <span>Max: <span className="text-on-surface">{settings.maxPlayers} players</span></span>}
               <span>Buy-in: <span className="text-on-surface">${centsToUSD(settings.defaultBuyIn)}</span></span>
+              {settings.entryFee != null && settings.entryFee > 0 && (
+                <span>Entry: <span className="text-on-surface">${centsToUSD(settings.entryFee)}</span></span>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            {!room.endedAt && onEditRoom && (
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="px-4 py-2 bg-surface-raised border border-outline hover:bg-outline text-on-surface rounded-xl text-sm font-medium transition-colors duration-150"
+              >
+                Edit Room
+              </button>
+            )}
             <button
               onClick={onShowQR}
               className="px-4 py-2 bg-surface-raised border border-outline hover:bg-outline text-on-surface rounded-xl text-sm font-medium transition-colors duration-150"
@@ -366,6 +513,17 @@ export default function HostDashboard({
 
         </div>
       </div>
+
+      {showEditModal && onEditRoom && (
+        <EditRoomModal
+          settings={settings}
+          onClose={() => setShowEditModal(false)}
+          onSave={onEditRoom}
+        />
+      )}
+      {showInfoModal && (
+        <SettlementInfoModal onClose={() => setShowInfoModal(false)} />
+      )}
     </div>
   )
 }

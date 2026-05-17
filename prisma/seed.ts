@@ -15,6 +15,7 @@ async function main() {
       username: 'alice',
       name: 'Alice',
       passwordHash: await bcrypt.hash('password', 10),
+      emailVerified: true,
       paymentMethods: {
         create: [
           {
@@ -39,6 +40,7 @@ async function main() {
       username: 'bob',
       name: 'Bob',
       passwordHash: await bcrypt.hash('password', 10),
+      emailVerified: true,
       paymentMethods: {
         create: [
           {
@@ -63,6 +65,7 @@ async function main() {
       username: 'charlie',
       name: 'Charlie',
       passwordHash: await bcrypt.hash('password', 10),
+      emailVerified: true,
       paymentMethods: {
         create: [
           {

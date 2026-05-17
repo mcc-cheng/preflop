@@ -54,6 +54,19 @@ export default function RoomPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [showQR])
 
+  const handleEditRoom = async (updates: Record<string, any>) => {
+    const res = await fetch(`/api/rooms/${code}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Failed to update room')
+    }
+    await fetchRoom()
+  }
+
   const handleEndRoom = async () => {
     if (!confirm('End this room? This will compute final settlement.')) return
     const res = await fetch(`/api/rooms/${code}/end`, { method: 'POST' })
@@ -163,6 +176,7 @@ export default function RoomPage() {
     onBuyInAction: handleBuyInAction,
     onShowQR: () => setShowQR(true),
     onShowSettlement: () => setShowSettlement(true),
+    onEditRoom: handleEditRoom,
   }
 
   return (
