@@ -39,6 +39,9 @@ export function TopBar() {
   const code = params?.code as string | undefined
   const [menuOpen, setMenuOpen] = useState(false)
 
+  // The landing/teaser page is a full-screen experience — no global header.
+  if (pathname === '/') return null
+
   const hideNav = NAV_HIDDEN_PATHS.some(p => pathname?.startsWith(p))
 
   // Active-link helper: exact match, never activate '#' placeholders
@@ -52,7 +55,7 @@ export function TopBar() {
       >
         {/* Logo */}
         <Link
-          href="/rooms"
+          href={session ? '/rooms' : '/'}
           className="font-mono font-bold chip-text-white text-lg tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chip-white/40 rounded"
         >
           Preflop

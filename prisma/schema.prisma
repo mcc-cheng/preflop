@@ -7,6 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model WaitlistSignup {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  affiliation String?  // company, school, or where they play
+  xHandle     String?  // optional X / Twitter handle
+  note        String?  // optional "anything else"
+  source      String?  // where the signup came from, e.g. "landing"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
 model User {
   id            String       @id @default(cuid())
   email         String       @unique
