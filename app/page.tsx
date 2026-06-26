@@ -149,9 +149,10 @@ export default async function Home() {
           No arguments needed
         </p>
 
-        {/* Subtext */}
-        <p className="teaser-rise mt-3 text-balance text-lg font-semibold text-white/85 sm:text-xl" style={{ animationDelay: '250ms' }}>
-          Revolutionizing poker ledger
+        {/* Subtext — monospace to match the wordmark, two muted poker hues */}
+        <p className="teaser-rise mt-3 text-balance font-mono text-base font-semibold tracking-tight sm:text-lg" style={{ animationDelay: '250ms' }}>
+          <span style={{ color: '#c2a36a' }}>Revolutionizing</span>{' '}
+          <span style={{ color: '#5fb189' }}>poker ledger</span>
         </p>
 
         {/* CTA */}
