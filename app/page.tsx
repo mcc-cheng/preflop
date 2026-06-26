@@ -145,7 +145,7 @@ export default async function Home() {
         </h1>
 
         {/* Tagline */}
-        <p className="teaser-rise mt-6 text-balance text-3xl font-bold leading-tight text-white sm:text-4xl" style={{ animationDelay: '210ms' }}>
+        <p className="teaser-rise mt-6 text-balance font-mono text-3xl font-bold leading-tight text-white sm:text-4xl" style={{ animationDelay: '210ms' }}>
           No arguments needed
         </p>
 
